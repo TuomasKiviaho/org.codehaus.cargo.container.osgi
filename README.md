@@ -1,5 +1,5 @@
-Embedded Cargo container for OSGi Service Platform Release 4 Version 4.2 
-Framework Launch package. 
+Embedded Cargo Container for OSGi Framework Launcher
+====================================================
 
 There are alternative ways such as custom JUnit runners or suites that could do 
 the same thing without Cargo and there even is Pax Exam and Junit4OSGi already
