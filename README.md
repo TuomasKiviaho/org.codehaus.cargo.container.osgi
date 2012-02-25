@@ -22,6 +22,7 @@ freedom to choose both OSGi API and implementation that support Launcher
 Framework.
 
 Usage:
+
 	<plugin>
 		<groupId>org.codehaus.cargo</groupId>
 		<artifactId>cargo-maven2-plugin</artifactId>
