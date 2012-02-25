@@ -62,15 +62,9 @@ Usage:
 			<configuration>
 				<type>runtime</type>
 				<properties>
-					<org.osgi.framework.executionenvironment>
-					  JavaSE-1.6
-					</org.osgi.framework.executionenvironment>
-					<org.osgi.framework.storage>
-					  ${project.build.directory}/osgi
-					</org.osgi.framework.storage>
-					<org.osgi.framework.storage.clean>
-					  onFirstInit
-					</org.osgi.framework.storage.clean>
+					<org.osgi.framework.executionenvironment>JavaSE-1.6</org.osgi.framework.executionenvironment>
+					<org.osgi.framework.storage>${project.build.directory}/osgi</org.osgi.framework.storage>
+					<org.osgi.framework.storage.clean>onFirstInit</org.osgi.framework.storage.clean>
 				</properties>
 				<deployables>
 					<deployable />
