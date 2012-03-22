@@ -12,7 +12,7 @@ public class OsgiContainerCapability implements ContainerCapability {
 	}
 
 	public boolean supportsDeployableType(DeployableType type) { 
-		return DeployableType.BUNDLE.equals(type);
+		return DeployableType.BUNDLE.equals(type) || DeployableType.FILE.equals(type);
 	}
 
 }

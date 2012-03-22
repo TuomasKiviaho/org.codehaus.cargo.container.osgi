@@ -1,0 +1,12 @@
+<!DOCTYPE aspectj PUBLIC "-//AspectJ//DTD//EN" "http://www.eclipse.org/aspectj/dtd/aspectj.dtd">
+<aspectj>
+	<!-- https://bugs.eclipse.org/bugs/show_bug.cgi?id=362411 -->
+	<!-- options="-verbose -showWeaveInfo -debug" -->
+	<weaver > 
+		<include within="org.apache.maven.surefire.booter.ForkedBooter" />
+		<include within="org.apache.maven.surefire.osgi.ForkedBooterAspect" />
+	</weaver>
+	<aspects> 
+		<aspect name="org.apache.maven.surefire.osgi.ForkedBooterAspect" />
+	</aspects>
+</aspectj>

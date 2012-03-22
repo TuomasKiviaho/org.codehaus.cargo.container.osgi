@@ -1,102 +1,37 @@
 package org.codehaus.cargo.container.osgi;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.io.File;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.AbstractMap;
 import java.util.Dictionary;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
 
-import javassist.util.proxy.MethodHandler;
-import javassist.util.proxy.ProxyFactory;
-import javassist.util.proxy.ProxyObject;
-import javassist.util.proxy.RuntimeSupport;
-
 import org.codehaus.cargo.container.ContainerCapability;
 import org.codehaus.cargo.container.ContainerException;
 import org.codehaus.cargo.container.configuration.LocalConfiguration;
+import org.codehaus.cargo.container.deployable.Deployable;
+import org.codehaus.cargo.container.deployable.DeployableType;
+import org.codehaus.cargo.container.property.ServletPropertySet;
 import org.codehaus.cargo.container.spi.AbstractEmbeddedLocalContainer;
-import org.objenesis.ObjenesisHelper;
+import org.codehaus.cargo.util.FileHandler;
+import org.codehaus.cargo.util.log.Logger;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.BundleReference;
 import org.osgi.framework.Constants;
+import org.osgi.framework.Version;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
 
-public class OsgiEmbeddedLocalContainer extends AbstractEmbeddedLocalContainer {
-
-	private static class MethodHandlerImpl implements MethodHandler {
-
-		private static <T> T[] proxy(Class<? extends T> componentType,
-				Object[] target) {
-			@SuppressWarnings("unchecked")
-			T[] proxy = (T[]) Array.newInstance(componentType, target.length);
-			for (int i = 0; i < target.length; i++) {
-				proxy[i] = OsgiEmbeddedLocalContainer.proxy(componentType,
-						target[i]);
-			}
-			return proxy;
-		}
-
-		private Object target;
-
-		public MethodHandlerImpl(Object target) {
-			this.target = target;
-		}
-
-		public Object invoke(Object proxy, Method proxyMethod, Method method,
-				Object[] arguments) throws Throwable {
-			Method targetMethod = method;
-			if (targetMethod == null) {
-				String descriptor = RuntimeSupport.makeDescriptor(proxyMethod);
-				String name = proxyMethod.getName();
-				targetMethod = RuntimeSupport.findMethod(this.target, name,
-						descriptor);
-			}
-			Class<?> declaringClass = targetMethod.getDeclaringClass();
-			int modifiers = declaringClass.getModifiers();
-			if (!Modifier.isPublic(modifiers)) {
-				targetMethod.setAccessible(true);
-			}
-			Object result;
-			try {
-				result = targetMethod.invoke(target, arguments);
-			} catch (InvocationTargetException e) {
-				throw e.getCause();
-			}
-			if (result != null) {
-				Class<?> returnType = proxyMethod.getReturnType();
-				if (!returnType.isInstance(result)) {
-					Class<?> componentType = returnType.getComponentType();
-					result = componentType == null ? OsgiEmbeddedLocalContainer
-							.proxy(returnType, result) : proxy(componentType,
-							(Object[]) result);
-				}
-			}
-			return result;
-		}
-
-	}
-
-	private static <T> T proxy(Class<? extends T> type, Object target) {
-		ProxyFactory proxyFactory = new ProxyFactory();
-		if (type.isInterface()) {
-			Class<?>[] interfaces = new Class<?>[] { type };
-			proxyFactory.setInterfaces(interfaces);
-		} else {
-			proxyFactory.setSuperclass(type);
-		}
-		Class<?> proxyClass = proxyFactory.createClass();
-		ProxyObject proxyObject = (ProxyObject) ObjenesisHelper
-				.newInstance(proxyClass);
-		MethodHandler methodHandler = new MethodHandlerImpl(target);
-		proxyObject.setHandler(methodHandler);
-		@SuppressWarnings("unchecked")
-		T proxy = (T) proxyObject;
-		return proxy;
-	}
+public class OsgiEmbeddedLocalContainer extends AbstractEmbeddedLocalContainer
+		implements BundleReference {
 
 	private Framework framework;
 
@@ -107,25 +42,43 @@ public class OsgiEmbeddedLocalContainer extends AbstractEmbeddedLocalContainer {
 	@Override
 	public void setClassLoader(ClassLoader classLoader) {
 		super.setClassLoader(classLoader);
-		LocalConfiguration configuration = this.getConfiguration();
-		Map<String, String> properties = configuration.getProperties();
+		FrameworkFactory frameworkFactory;
 		try {
 			Class<?> service = Class.forName(FrameworkFactory.class.getName(),
 					true, classLoader);
 			ServiceLoader<?> frameworkFactories = ServiceLoader.load(service,
 					classLoader);
 			Iterator<?> iterator = frameworkFactories.iterator();
-			FrameworkFactory frameworkFactory = proxy(FrameworkFactory.class,
+			frameworkFactory = Proxy.newInstance(FrameworkFactory.class,
 					iterator.next());
-			framework = frameworkFactory.newFramework(properties);
 		} catch (NoSuchElementException e) {
 			throw new ContainerException(FrameworkFactory.class.getName(), e);
 		} catch (ClassNotFoundException e) {
 			throw new ContainerException(FrameworkFactory.class.getName(), e);
 		}
+		LocalConfiguration configuration = this.getConfiguration();
+		Map<String, String> configurationProperties = configuration
+				.getProperties();
+		Map<String, String> properties = new HashMap<String, String>(
+				configurationProperties);
+		for (Iterator<String> iterator = properties.keySet().iterator(); iterator
+				.hasNext();) {
+			String propertyName = iterator.next();
+			if (propertyName.startsWith("cargo.")) {
+				iterator.remove();
+			}
+		}
+		String port = properties.get("org.osgi.service.http.port");
+		if (port == null) {
+			port = configurationProperties.get(ServletPropertySet.PORT);
+			properties.put("org.osgi.service.http.port", port);
+		} else {
+			configurationProperties.put(ServletPropertySet.PORT, port);
+		}
+		framework = frameworkFactory.newFramework(properties);
 	}
 
-	public Framework getFramework() {
+	public Framework getBundle() {
 		return framework;
 	}
 
@@ -143,9 +96,81 @@ public class OsgiEmbeddedLocalContainer extends AbstractEmbeddedLocalContainer {
 		return OsgiContainerCapability.INSTANCE;
 	}
 
+	static String getLocation(Deployable deployable) {
+		String location = deployable.getFile();
+		DeployableType type = deployable.getType();
+		if (DeployableType.FILE.equals(type)) {
+			File file = new File(location);
+			URI uri = file.toURI();
+			location = "reference:" + uri.toString();
+		}
+		return location;
+	}
+
+	Map.Entry<String, InputStream> getInputStream(Deployable deployable) {
+		String location = getLocation(deployable);
+		InputStream inputStream = null;
+		DeployableType type = deployable.getType();
+		if (!DeployableType.FILE.equals(type)) {
+			FileHandler fileHandler = this.getFileHandler();
+			inputStream = fileHandler.getInputStream(location);
+		}
+		Map.Entry<String, InputStream> entry = new AbstractMap.SimpleImmutableEntry<String, InputStream>(
+				location, inputStream);
+		return entry;
+	}
+
+	Bundle installBundle(Deployable deployable) throws BundleException {
+		Map.Entry<String, InputStream> entry = getInputStream(deployable);
+		String location = entry.getKey();
+		InputStream inputStream = entry.getValue();
+		BundleContext bundleContext = framework.getBundleContext();
+		Bundle bundle = bundleContext.installBundle(location, inputStream);
+		return bundle;
+	}
+
+	static void start(Bundle bundle) throws BundleException {
+		Dictionary<?, ?> headers = bundle.getHeaders();
+		String fragmentHost = (String) headers.get(Constants.FRAGMENT_HOST);
+		if (fragmentHost == null) {
+			bundle.start(Bundle.START_ACTIVATION_POLICY);
+		}
+	}
+
 	@Override
 	protected void doStart() throws BundleException, SecurityException {
 		framework.start();
+		Logger logger = this.getLogger();
+		String category = this.getClass().getName();
+		logger.info(
+				String.format("%4s|%-11s|%s", "ID", "State", "Level", "Name"),
+				category);
+		Map<Integer, String> states = new LinkedHashMap<Integer, String>(6);
+		states.put(Bundle.UNINSTALLED, "UNINSTALLED");
+		states.put(Bundle.INSTALLED, "INSTALLED");
+		states.put(Bundle.RESOLVED, "RESOLVED");
+		states.put(Bundle.STARTING, "STARTING");
+		states.put(Bundle.STOPPING, "STOPPING");
+		states.put(Bundle.ACTIVE, "ACTIVE");
+		BundleContext bundleContext = framework.getBundleContext();
+		Bundle[] bundles = bundleContext.getBundles();
+		for (Bundle bundle : bundles) {
+			long bundleId = bundle.getBundleId();
+			int bundleState = bundle.getState();
+			String state = null;
+			for (Map.Entry<Integer, String> entry : states.entrySet()) {
+				int key = entry.getKey();
+				if ((key & bundleState) > 0) {
+					state = entry.getValue();
+					break;
+				}
+			}
+			String symbolicName = bundle.getSymbolicName();
+			Version version = bundle.getVersion();
+			String message = String.format("%4d|%-11s|%s (%s)", bundleId,
+					state, symbolicName, version.toString());
+			logger.info(message, category);
+		}
 	}
 
 	@Override
