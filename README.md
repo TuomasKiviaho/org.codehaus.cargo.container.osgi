@@ -15,7 +15,7 @@ JavaEE demands. Micro JOnAS deals with these issues, but at the time of writing
 this it did not start. 
 
 OSGi frameworks such as Apache Felix can have both API and implementation 
-packaged together which would cause API incompatibilites because the container 
+packaged together which would cause API incompatibilities because the container 
 itself depends on OSGi API. This is resolved by proxying framework 
 implementation against the API used by the container. This approach gives 
 freedom to choose both OSGi API and implementation that support Launcher 
@@ -28,6 +28,12 @@ Usage:
 		<artifactId>cargo-maven2-plugin</artifactId>
 		<version>1.2.0</version>
 		<executions>
+			<execution>
+				<id>default-cli</id>
+				<goals>
+					<goal>run</goal>
+				</goals>
+			</execution>
 			<execution>
 				<id>pre-integration-test</id>
 				<phase>pre-integration-test</phase>
@@ -59,16 +65,7 @@ Usage:
 						<type>bundle</type>
 					</dependency>
 				</dependencies>
-			</container>
-			<configuration>
-				<type>runtime</type>
-				<properties>
-					<org.osgi.framework.executionenvironment>JavaSE-1.6</org.osgi.framework.executionenvironment>
-					<org.osgi.framework.storage>${project.build.directory}/osgi</org.osgi.framework.storage>
-					<org.osgi.framework.storage.clean>onFirstInit</org.osgi.framework.storage.clean>
-				</properties>
 				<deployables>
-					<deployable />
 					<deployable>
 						<groupId>org.ops4j.pax.logging</groupId>
 						<artifactId>pax-logging-api</artifactId>
@@ -80,6 +77,22 @@ Usage:
 					<deployable>
 						<groupId>org.apache.felix</groupId>
 						<artifactId>org.apache.felix.configadmin</artifactId>
+					</deployable>
+				</deployables>
+			</container>
+			<configuration>
+				<type>runtime</type>
+				<properties>
+					<org.osgi.framework.storage>${project.build.directory}/osgi</org.osgi.framework.storage>
+					<org.osgi.framework.storage.clean>onFirstInit</org.osgi.framework.storage.clean>
+				</properties>
+				<deployables>
+					<deployable>
+						<type>file</type>
+					</deployable>
+					<deployable>
+						<classifier>tests</classifier>
+						<type>file</type>
 					</deployable>
 				</deployables>
 			</configuration>
