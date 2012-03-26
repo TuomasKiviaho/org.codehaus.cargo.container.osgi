@@ -62,7 +62,6 @@ Usage:
 					<dependency>
 						<groupId>org.apache.felix</groupId>
 						<artifactId>org.apache.felix.framework</artifactId>
-						<type>bundle</type>
 					</dependency>
 				</dependencies>
 				<deployables>
@@ -87,12 +86,9 @@ Usage:
 					<org.osgi.framework.storage.clean>onFirstInit</org.osgi.framework.storage.clean>
 				</properties>
 				<deployables>
+					<deployable />
 					<deployable>
-						<type>file</type>
-					</deployable>
-					<deployable>
-						<classifier>tests</classifier>
-						<type>file</type>
+						<classifier>tests</classifier> 
 					</deployable>
 				</deployables>
 			</configuration>

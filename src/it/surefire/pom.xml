@@ -247,7 +247,6 @@
 							<dependency>
 								<groupId>org.apache.felix</groupId>
 								<artifactId>org.apache.felix.framework</artifactId>
-								<type>bundle</type>
 							</dependency>
 						</dependencies>
 					</container>
@@ -263,38 +262,30 @@
 							<deployable>
 								<groupId>org.apache.felix</groupId>
 								<artifactId>org.apache.felix.shell</artifactId>
-								<type>bundle</type>
 							</deployable>
 							<deployable>
 								<groupId>org.apache.felix</groupId>
 								<artifactId>org.apache.felix.shell.remote</artifactId>
-								<type>bundle</type>
 							</deployable>
 							<deployable>
 								<groupId>org.apache.felix</groupId>
 								<artifactId>org.apache.felix.gogo.runtime</artifactId>
-								<type>bundle</type>
 							</deployable>
 							<deployable>
 								<groupId>org.apache.felix</groupId>
 								<artifactId>org.apache.felix.gogo.shell</artifactId>
-								<type>bundle</type>
 							</deployable>
 							<deployable>
 								<groupId>org.apache.felix</groupId>
 								<artifactId>org.apache.felix.gogo.command</artifactId>
-								<type>bundle</type>
 							</deployable>
 						</deployables>
 					</configuration>
 					<deployer>
 						<deployables>
-							<deployable>
-								<type>file</type>
-							</deployable>
+							<deployable />
 							<deployable>
 								<classifier>tests</classifier>
-								<type>file</type>
 							</deployable>
 						</deployables>
 					</deployer>
@@ -314,7 +305,7 @@
 							</properties>
 							<argLine>-javaagent:${project.build.directory}/javaagent/aspectjweaver.jar</argLine>
 							<failIfNoTests>true</failIfNoTests>
-							<debugForkedProcess>true</debugForkedProcess>
+							<debugForkedProcess>false</debugForkedProcess>
 						</configuration>
 					</execution>
 					<execution>
