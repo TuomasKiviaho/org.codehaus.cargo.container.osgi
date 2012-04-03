@@ -16,55 +16,72 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.launch.Framework;
 
-public class OsgiLocalConfiguration extends AbstractLocalConfiguration {
+public class OsgiLocalConfiguration
+    extends AbstractLocalConfiguration
+{
 
-	private static final ConfigurationCapability CAPABILITY = new OsgiConfigurationCapability();
+    private static final ConfigurationCapability CAPABILITY = new OsgiConfigurationCapability();
 
-	public OsgiLocalConfiguration() {
-		super(null);
-		String port = System.getProperty("org.osgi.service.http.port");
-		if (port != null) {
-			this.setProperty(ServletPropertySet.PORT, port);
-		}
-	}
+    public OsgiLocalConfiguration()
+    {
+        super( null );
+        String port = System.getProperty( "org.osgi.service.http.port" );
+        if ( port != null )
+        {
+            this.setProperty( ServletPropertySet.PORT, port );
+        }
+    }
 
-	public ConfigurationCapability getCapability() {
-		return CAPABILITY;
-	}
+    public ConfigurationCapability getCapability()
+    {
+        return CAPABILITY;
+    }
 
-	public ConfigurationType getType() {
-		return ConfigurationType.RUNTIME;
-	}
+    public ConfigurationType getType()
+    {
+        return ConfigurationType.RUNTIME;
+    }
 
-	@Override
-	protected void doConfigure(LocalContainer container)
-			throws BundleException, SecurityException {
-		OsgiEmbeddedLocalContainer embeddedLocalContainer = (OsgiEmbeddedLocalContainer) container;
-		Framework framework = embeddedLocalContainer.getBundle();
-		framework.init();
-		List<Deployable> deployables = this.getDeployables();
-		Map<Long, Deployable> bundles = new LinkedHashMap<Long, Deployable>(
-				deployables.size());
-		for (Deployable deployable : deployables) {
-			try {
-				Bundle bundle = embeddedLocalContainer
-						.installBundle(deployable);
-				long bundleId = bundle.getBundleId();
-				bundles.put(bundleId, deployable);
-			} catch (BundleException e) {
-				throw new DeployableException(deployable.toString(), e);
-			}
-		}
-		BundleContext bundleContext = framework.getBundleContext();
-		for (long bundleId : bundles.keySet()) {
-			Bundle bundle = bundleContext.getBundle(bundleId);
-			try {
-				OsgiEmbeddedLocalContainer.start(bundle);
-			} catch (BundleException e) {
-				Deployable deployable = bundles.get(bundleId);
-				throw new DeployableException(deployable.toString(), e);
-			}
-		}
-	}
+    @Override
+    protected void doConfigure( LocalContainer container )
+        throws BundleException, SecurityException
+    {
+        OsgiEmbeddedLocalContainer embeddedLocalContainer = (OsgiEmbeddedLocalContainer) container;
+        Framework framework = embeddedLocalContainer.getBundle();
+        BundleContext bundleContext = framework.getBundleContext();
+        if ( bundleContext == null )
+        {
+            framework.init();
+            List<Deployable> deployables = this.getDeployables();
+            Map<Long, Deployable> bundles = new LinkedHashMap<Long, Deployable>( deployables.size() );
+            for ( Deployable deployable : deployables )
+            {
+                try
+                {
+                    Bundle bundle = embeddedLocalContainer.installBundle( deployable );
+                    long bundleId = bundle.getBundleId();
+                    bundles.put( bundleId, deployable );
+                }
+                catch ( BundleException e )
+                {
+                    throw new DeployableException( deployable.toString(), e );
+                }
+            }
+            bundleContext = framework.getBundleContext();
+            for ( long bundleId : bundles.keySet() )
+            {
+                Bundle bundle = bundleContext.getBundle( bundleId );
+                try
+                {
+                    OsgiEmbeddedLocalContainer.start( bundle );
+                }
+                catch ( BundleException e )
+                {
+                    Deployable deployable = bundles.get( bundleId );
+                    throw new DeployableException( deployable.toString(), e );
+                }
+            }
+        }
+    }
 
 }

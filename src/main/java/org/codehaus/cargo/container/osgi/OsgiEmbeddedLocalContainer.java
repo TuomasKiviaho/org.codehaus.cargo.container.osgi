@@ -51,7 +51,9 @@ public class OsgiEmbeddedLocalContainer
             Class<?> service = Class.forName( FrameworkFactory.class.getName(), true, classLoader );
             ServiceLoader<?> frameworkFactories = ServiceLoader.load( service, classLoader );
             Iterator<?> iterator = frameworkFactories.iterator();
-            frameworkFactory = Proxy.newInstance( FrameworkFactory.class, iterator.next() );
+            ClassLoader containerClassLoader = this.getClass().getClassLoader();
+            frameworkFactory =
+                Proxy.newInstance( containerClassLoader, FrameworkFactory.class, classLoader, iterator.next() );
         }
         catch ( NoSuchElementException e )
         {

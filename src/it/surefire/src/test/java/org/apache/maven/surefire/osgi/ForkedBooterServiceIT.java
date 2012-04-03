@@ -8,7 +8,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
 
-public class ForkerBooterServiceIT extends TestCase {
+public class ForkedBooterServiceIT extends TestCase {
 
 	public void test() {
 		Bundle bundle = FrameworkUtil.getBundle(Booter.class);

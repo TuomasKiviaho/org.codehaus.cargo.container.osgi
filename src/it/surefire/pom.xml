@@ -247,6 +247,7 @@
 							<dependency>
 								<groupId>org.apache.felix</groupId>
 								<artifactId>org.apache.felix.framework</artifactId>
+								<type>bundle</type>
 							</dependency>
 						</dependencies>
 					</container>
@@ -290,6 +291,13 @@
 						</deployables>
 					</deployer>
 				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.codehaus.cargo</groupId>
+						<artifactId>cargo-core-container-osgi</artifactId>
+						<version>1.2.0</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 			<plugin>
 				<artifactId>maven-failsafe-plugin</artifactId>
@@ -356,7 +364,7 @@
 		<dependency>
 			<groupId>org.apache.felix</groupId>
 			<artifactId>org.apache.felix.gogo.runtime</artifactId>
-			<version>${org.apache.felix.gogo}</version>
+			<version>0.10.0</version>
 			<type>bundle</type>
 			<scope>provided</scope>
 		</dependency>
@@ -370,39 +378,34 @@
 		<dependency>
 			<groupId>org.apache.felix</groupId>
 			<artifactId>org.apache.felix.shell</artifactId>
-			<version>${org.apache.felix.shell}</version>
+			<version>1.4.2</version>
 			<type>bundle</type>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.felix</groupId>
 			<artifactId>org.apache.felix.shell.remote</artifactId>
-			<version>${org.apache.felix.shell.remote}</version>
+			<version>1.1.2</version>
 			<type>bundle</type>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.felix</groupId>
 			<artifactId>org.apache.felix.gogo.command</artifactId>
-			<version>${org.apache.felix.gogo}</version>
+			<version>0.10.0</version>
 			<type>bundle</type>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.felix</groupId>
 			<artifactId>org.apache.felix.gogo.shell</artifactId>
-			<version>${org.apache.felix.gogo}</version>
+			<version>0.10.0</version>
 			<type>bundle</type>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<properties>
-		<org.apache.felix.gogo>0.10.0</org.apache.felix.gogo>
-		<org.apache.felix.shell>1.4.2</org.apache.felix.shell>
-		<org.apache.felix.shell.remote>1.1.2</org.apache.felix.shell.remote>
-		<org.apache.felix.framework>4.0.2</org.apache.felix.framework>
 		<org.aspectj>1.6.12</org.aspectj>
-		<org.apache.maven.surefire>2.12</org.apache.maven.surefire>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>

@@ -20,9 +20,15 @@
 						</goals>
 						<configuration>
 							<skipInvocation>false</skipInvocation>
+							<pomExcludes>
+								<pomExclude>karaf/pom.xml</pomExclude>
+							</pomExcludes>
+							<localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
 							<settingsFile>src/it/settings.xml</settingsFile>
-							<projectsDirectory>src/it</projectsDirectory>
 							<cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+							<goals>
+								<goal>verify</goal>
+							</goals>
 						</configuration>
 					</execution>
 				</executions>
@@ -57,6 +63,22 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/main/assembly/proxy.xml</descriptor>
+							</descriptors>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 	<dependencies>
@@ -68,7 +90,7 @@
 		<dependency>
 			<groupId>org.javassist</groupId>
 			<artifactId>javassist</artifactId>
-			<version>3.15.0-GA</version>
+			<version>3.16.1-GA</version>
 		</dependency>
 		<dependency>
 			<groupId>org.objenesis</groupId>

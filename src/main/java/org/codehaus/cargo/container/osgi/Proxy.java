@@ -7,82 +7,216 @@ import java.lang.reflect.Modifier;
 
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
-import javassist.util.proxy.ProxyObject;
 import javassist.util.proxy.RuntimeSupport;
 
 import org.objenesis.ObjenesisHelper;
 
-public class Proxy {
+public class Proxy
+{
 
-	private static class MethodHandlerImpl implements MethodHandler {
+    private static class MethodHandlerImpl
+        implements MethodHandler
+    {
 
-		private static <T> T[] proxy(Class<? extends T> componentType,
-				Object[] target) {
-			@SuppressWarnings("unchecked")
-			T[] proxy = (T[]) Array.newInstance(componentType, target.length);
-			for (int i = 0; i < target.length; i++) {
-				proxy[i] = Proxy.newInstance(componentType, target[i]);
-			}
-			return proxy;
-		}
+        private static <T> T proxy( ClassLoader proxyClassLoader, Class<? extends T> type, ClassLoader classLoader,
+                                    Object target )
+        {
+            @SuppressWarnings( "unchecked" )
+            T proxy = (T) target;
+            if ( target != null && !type.isPrimitive() )
+            {
+                Class<?> targetType = target.getClass();
+                if ( targetType.isArray() )
+                {
+                    targetType = targetType.getComponentType();
+                    Class<?> componentType = type.getComponentType();
+                    @SuppressWarnings( "unchecked" )
+                    T array =
+                        (T) ( ProxyFactory.isProxyClass( targetType ) ? unproxy( proxyClassLoader, componentType,
+                                                                                 classLoader, (Object[]) target )
+                                        : componentType.isPrimitive() || type.isInstance( target ) ? target
+                                                        : proxy( proxyClassLoader, componentType, classLoader,
+                                                                 (Object[]) target ) );
+                    proxy = array;
+                }
+                else if ( ProxyFactory.isProxyClass( targetType ) )
+                {
+                    proxy = unproxy( proxyClassLoader, type, classLoader, target );
+                }
+                else if ( !type.isInstance( target ) )
+                {
+                    proxy = Proxy.newInstance( proxyClassLoader, type, classLoader, target );
+                }
+            }
+            return proxy;
+        }
 
-		private Object target;
+        private static <T> T[] proxy( ClassLoader proxyClassLoader, Class<? extends T> componentType,
+                                      ClassLoader classLoader, Object[] target )
+        {
+            @SuppressWarnings( "unchecked" )
+            T[] proxy = (T[]) Array.newInstance( componentType, target.length );
+            for ( int i = 0; i < target.length; i++ )
+            {
+                proxy[i] = Proxy.newInstance( proxyClassLoader, componentType, classLoader, target[i] );
+            }
+            return proxy;
+        }
 
-		public MethodHandlerImpl(Object target) {
-			this.target = target;
-		}
+        private static <T> T unproxy( ClassLoader classLoader, Class<? extends T> type, ClassLoader proxyClassLoader,
+                                      Object proxy )
+        {
+            MethodHandler methodHandler = ProxyFactory.getHandler( (javassist.util.proxy.Proxy) proxy );
+            @SuppressWarnings( "unchecked" )
+            T target =
+                methodHandler instanceof MethodHandlerImpl ? (T) ( (MethodHandlerImpl) methodHandler ).target
+                                : Proxy.newInstance( classLoader, type, proxyClassLoader, proxy );
+            return target;
+        }
 
-		public Object invoke(Object proxy, Method proxyMethod, Method method,
-				Object[] arguments) throws Throwable {
-			String descriptor = RuntimeSupport.makeDescriptor(proxyMethod);
-			String name = proxyMethod.getName();
-			Method targetMethod = RuntimeSupport.findMethod(this.target, name,
-					descriptor);
-			Class<?> declaringClass = targetMethod.getDeclaringClass();
-			int modifiers = declaringClass.getModifiers();
-			if (!Modifier.isPublic(modifiers)) {
-				targetMethod.setAccessible(true);
-			}
-			Object result;
-			try {
-				result = targetMethod.invoke(target, arguments);
-			} catch (InvocationTargetException e) {
-				throw e.getCause();
-			}
-			if (result != null) {
-				Class<?> returnType = proxyMethod.getReturnType();
-				if (!(returnType.isPrimitive() || returnType.isInstance(result))) {
-					Class<?> componentType = returnType.getComponentType();
-					result = componentType == null ? Proxy.newInstance(
-							returnType, result) : proxy(componentType,
-							(Object[]) result);
-				}
-			}
-			return result;
-		}
+        private static <T> T[] unproxy( ClassLoader classLoader, Class<? extends T> componentType,
+                                        ClassLoader proxyClassLoader, Object[] proxies )
+        {
+            @SuppressWarnings( "unchecked" )
+            T[] targets = (T[]) Array.newInstance( componentType, proxies.length );
+            for ( int i = 0; i < proxies.length; i++ )
+            {
+                targets[i] = unproxy( classLoader, componentType, proxyClassLoader, proxies[i] );
+            }
+            return targets;
+        }
 
-	}
+        private ClassLoader classLoader;
 
-	public static <T> T newInstance(Class<? extends T> type, Object target) {
-		ProxyFactory proxyFactory = new ProxyFactory();
-		if (type.isInterface()) {
-			Class<?>[] interfaces = new Class<?>[] { type };
-			proxyFactory.setInterfaces(interfaces);
-		} else {
-			proxyFactory.setSuperclass(type);
-		}
-		Class<?> proxyClass = proxyFactory.createClass();
-		ProxyObject proxyObject = (ProxyObject) ObjenesisHelper
-				.newInstance(proxyClass);
-		MethodHandler methodHandler = new MethodHandlerImpl(target);
-		proxyObject.setHandler(methodHandler);
-		@SuppressWarnings("unchecked")
-		T proxy = (T) proxyObject;
-		return proxy;
-	}
+        private Object target;
 
-	public static boolean isProxyClass(Class<?> type) {
-		return ProxyFactory.isProxyClass(type);
-	}
+        public MethodHandlerImpl( ClassLoader classLoader, Object target )
+        {
+            this.classLoader = classLoader;
+            this.target = target;
+        }
+
+        public Object invoke( Object proxy, Method proxyMethod, Method method, Object[] arguments )
+            throws Throwable
+        {
+            Method targetMethod;
+            {
+                String descriptor = RuntimeSupport.makeDescriptor( proxyMethod );
+                String name = proxyMethod.getName();
+                try
+                {
+                    targetMethod = RuntimeSupport.findMethod( this.target, name, descriptor );
+                }
+                catch ( RuntimeException e )
+                {
+                    try
+                    {
+                        targetMethod = RuntimeSupport.findSuperMethod( this.target, name, descriptor );
+                    }
+                    catch ( RuntimeException e2 )
+                    {
+                        throw new AssertionError( e );
+                    }
+                }
+                Class<?> declaringClass = targetMethod.getDeclaringClass();
+                int modifiers = declaringClass.getModifiers();
+                if ( !Modifier.isPublic( modifiers ) )
+                {
+                    targetMethod.setAccessible( true );
+                }
+            }
+            Class<?> declaringClass = proxyMethod.getDeclaringClass();
+            ClassLoader classLoader = declaringClass.getClassLoader();
+            Class<?>[] parameterTypes = targetMethod.getParameterTypes();
+            Object[] parameters = new Object[arguments.length];
+            for ( int i = 0; i < arguments.length; i++ )
+            {
+                Class<?> parameterType = parameterTypes[i];
+                Object argument = arguments[i];
+                parameters[i] = proxy( this.classLoader, parameterType, classLoader, argument );
+            }
+            Object result;
+            try
+            {
+                result = targetMethod.invoke( target, parameters );
+            }
+            catch ( IllegalArgumentException e )
+            {
+                throw new AssertionError( e );
+            }
+            catch ( InvocationTargetException e )
+            {
+                throw e.getCause();
+            }
+            Class<?> returnType = proxyMethod.getReturnType();
+            return proxy( classLoader, returnType, this.classLoader, result );
+        }
+    }
+
+    private static class ProxyFactoryImpl
+        extends ProxyFactory
+    {
+
+        private ClassLoader classLoader;
+
+        public ProxyFactoryImpl( ClassLoader classLoader )
+        {
+            this.classLoader = new ClassLoader( classLoader )
+            {
+
+                @Override
+                protected Class<?> findClass( String name )
+                    throws ClassNotFoundException
+                {
+                    Class<javassist.util.proxy.Proxy> proxyClass = javassist.util.proxy.Proxy.class;
+                    Package proxyPackage = proxyClass.getPackage();
+                    return name.startsWith( proxyPackage.getName() ) ? proxyClass.getClassLoader().loadClass( name )
+                                    : super.findClass( name );
+                }
+
+            };
+        }
+
+        @Override
+        protected ClassLoader getClassLoader()
+        {
+            return classLoader;
+        }
+
+    }
+
+    public static <T> T newInstance( ClassLoader proxyClassLoader, Class<? extends T> type, ClassLoader classLoader,
+                                     Object target )
+    {
+        ProxyFactory proxyFactory = new ProxyFactoryImpl( proxyClassLoader );
+        if ( type.isInterface() )
+        {
+            Class<?>[] interfaces = new Class<?>[] { type };
+            proxyFactory.setInterfaces( interfaces );
+        }
+        else
+        {
+            proxyFactory.setSuperclass( type );
+        }
+        Class<?> proxyClass;
+        try
+        {
+            proxyClass = proxyFactory.createClass();
+        }
+        catch ( RuntimeException e )
+        {
+            throw new AssertionError( e );
+        }
+        catch ( NoClassDefFoundError e )
+        {
+            throw new AssertionError( e );
+        }
+        @SuppressWarnings( "unchecked" )
+        T instance = (T) ObjenesisHelper.newInstance( proxyClass );
+        javassist.util.proxy.Proxy proxy = (javassist.util.proxy.Proxy) instance;
+        MethodHandler methodHandler = new MethodHandlerImpl( classLoader, target );
+        proxy.setHandler( methodHandler );
+        return instance;
+    }
 
 }
