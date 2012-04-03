@@ -313,7 +313,6 @@
 							</properties>
 							<argLine>-javaagent:${project.build.directory}/javaagent/aspectjweaver.jar</argLine>
 							<failIfNoTests>true</failIfNoTests>
-							<debugForkedProcess>false</debugForkedProcess>
 						</configuration>
 					</execution>
 					<execution>
