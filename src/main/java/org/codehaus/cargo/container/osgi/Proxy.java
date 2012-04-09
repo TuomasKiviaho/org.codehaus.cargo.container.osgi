@@ -34,7 +34,7 @@ public class Proxy
                     T array =
                         (T) ( ProxyFactory.isProxyClass( targetType ) ? unproxy( proxyClassLoader, componentType,
                                                                                  classLoader, (Object[]) target )
-                                        : componentType.isPrimitive() || type.isInstance( target ) ? target
+                                        : targetType.isPrimitive() || type.isInstance( target ) ? target
                                                         : proxy( proxyClassLoader, componentType, classLoader,
                                                                  (Object[]) target ) );
                     proxy = array;
@@ -174,13 +174,34 @@ public class Proxy
                                     : super.findClass( name );
                 }
 
+                @Override
+                public int hashCode()
+                {
+                    ClassLoader parent = this.getParent();
+                    return parent == null ? System.identityHashCode( null ) : parent.hashCode();
+                }
+
+                @Override
+                public boolean equals( Object object )
+                {
+                    boolean equals = this.getClass().isInstance( object );
+                    if ( equals )
+                    {
+                        ClassLoader parent1 = this.getParent();
+                        ClassLoader parent2 = ( (ClassLoader) object ).getParent();
+                        equals = parent1 == parent2 || parent1 != null && parent1.equals( parent2 );
+                    }
+                    return equals;
+                }
+
             };
+
         }
 
         @Override
         protected ClassLoader getClassLoader()
         {
-            return classLoader;
+            return this.classLoader;
         }
 
     }
@@ -217,6 +238,14 @@ public class Proxy
         MethodHandler methodHandler = new MethodHandlerImpl( classLoader, target );
         proxy.setHandler( methodHandler );
         return instance;
+    }
+
+    public static <T> T newInstance( Class<? extends T> type, Object target )
+    {
+        ClassLoader proxyClassLoader = type.getClassLoader();
+        Class<? extends Object> targetClass = target.getClass();
+        ClassLoader classLoader = targetClass.getClassLoader();
+        return newInstance( proxyClassLoader, type, classLoader, target );
     }
 
 }

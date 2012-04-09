@@ -294,8 +294,8 @@
 				<dependencies>
 					<dependency>
 						<groupId>org.codehaus.cargo</groupId>
-						<artifactId>cargo-core-container-osgi</artifactId>
-						<version>1.2.0</version>
+						<artifactId>cargo-container-osgi</artifactId>
+						<version>1.2.1</version>
 					</dependency>
 				</dependencies>
 			</plugin>
