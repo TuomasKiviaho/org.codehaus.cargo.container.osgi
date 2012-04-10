@@ -26,7 +26,7 @@ Usage:
 	<plugin>
 		<groupId>org.codehaus.cargo</groupId>
 		<artifactId>cargo-maven2-plugin</artifactId>
-		<version>1.2.0</version>
+		<version>1.2.1</version>
 		<executions>
 			<execution>
 				<id>default-cli</id>
@@ -62,20 +62,24 @@ Usage:
 					<dependency>
 						<groupId>org.apache.felix</groupId>
 						<artifactId>org.apache.felix.framework</artifactId>
+						<type>bundle</type>
 					</dependency>
 				</dependencies>
 				<deployables>
 					<deployable>
 						<groupId>org.ops4j.pax.logging</groupId>
 						<artifactId>pax-logging-api</artifactId>
+						<type>bundle</type>
 					</deployable>
 					<deployable>
 						<groupId>org.ops4j.pax.logging</groupId>
 						<artifactId>pax-logging-service</artifactId>
+						<type>bundle</type>
 					</deployable>
 					<deployable>
 						<groupId>org.apache.felix</groupId>
 						<artifactId>org.apache.felix.configadmin</artifactId>
+						<type>bundle</type>
 					</deployable>
 				</deployables>
 			</container>
@@ -96,8 +100,8 @@ Usage:
 		<dependencies>
 			<dependency>
 				<groupId>org.codehaus.cargo</groupId>
-				<artifactId>cargo-core-container-osgi</artifactId>
-				<version>1.2.0</version>
+				<artifactId>cargo-container-osgi</artifactId>
+				<version>1.2.1</version>
 			</dependency>
 		</dependencies>
 	</plugin>
