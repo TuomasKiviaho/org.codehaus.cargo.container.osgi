@@ -31,6 +31,7 @@ Shell that provide a lightweight remoting via CLI over telnet. JMX and other mec
 fullblown D-OSGi were considered but this aproach was closest to the spirit of Surefire Booter API.
 
 Usage:
+
 	<!-- osgi.shell.telnet.port can be obtainer using build-helper-maven-plugin -->
 	<plugin>
 		<groupId>org.codehaus.cargo</groupId>
