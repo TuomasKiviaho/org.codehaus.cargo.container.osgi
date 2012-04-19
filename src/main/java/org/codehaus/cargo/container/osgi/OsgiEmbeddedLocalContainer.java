@@ -1,9 +1,5 @@
 package org.codehaus.cargo.container.osgi;
 
-import java.io.File;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.AbstractMap;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -15,10 +11,8 @@ import java.util.ServiceLoader;
 import org.codehaus.cargo.container.ContainerCapability;
 import org.codehaus.cargo.container.ContainerException;
 import org.codehaus.cargo.container.configuration.LocalConfiguration;
-import org.codehaus.cargo.container.deployable.Deployable;
 import org.codehaus.cargo.container.property.ServletPropertySet;
 import org.codehaus.cargo.container.spi.AbstractEmbeddedLocalContainer;
-import org.codehaus.cargo.util.FileHandler;
 import org.codehaus.cargo.util.log.Logger;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -109,89 +103,52 @@ public class OsgiEmbeddedLocalContainer
         return OsgiContainerCapability.INSTANCE;
     }
 
-    static String getLocation( Deployable deployable )
-    {
-        String location = deployable.getFile();
-        File file = new File( location );
-        if ( file.exists() )
-        {
-            URI uri = file.toURI();
-            location = "reference:" + uri.toString();
-        }
-        return location;
-    }
-
-    Map.Entry<String, InputStream> getInputStream( Deployable deployable )
-    {
-        String location = getLocation( deployable );
-        InputStream inputStream = null;
-        if ( !location.startsWith( "reference:" ) )
-        {
-            FileHandler fileHandler = this.getFileHandler();
-            inputStream = fileHandler.getInputStream( location );
-        }
-        Map.Entry<String, InputStream> entry =
-            new AbstractMap.SimpleImmutableEntry<String, InputStream>( location, inputStream );
-        return entry;
-    }
-
-    Bundle installBundle( Deployable deployable )
-        throws BundleException
-    {
-        Map.Entry<String, InputStream> entry = getInputStream( deployable );
-        String location = entry.getKey();
-        InputStream inputStream = entry.getValue();
-        BundleContext bundleContext = framework.getBundleContext();
-        Bundle bundle = bundleContext.installBundle( location, inputStream );
-        return bundle;
-    }
-
-    static void start( Bundle bundle )
-        throws BundleException
-    {
-        Dictionary<?, ?> headers = bundle.getHeaders();
-        String fragmentHost = (String) headers.get( Constants.FRAGMENT_HOST );
-        if ( fragmentHost == null )
-        {
-            bundle.start( Bundle.START_ACTIVATION_POLICY );
-        }
-    }
-
     @Override
     protected void doStart()
         throws BundleException, SecurityException
     {
-        framework.start();
-        Logger logger = this.getLogger();
-        String category = this.getClass().getName();
-        logger.info( String.format( "%4s|%-11s|%s", "ID", "State", "Level", "Name" ), category );
-        Map<Integer, String> states = new LinkedHashMap<Integer, String>( 6 );
-        states.put( Bundle.UNINSTALLED, "UNINSTALLED" );
-        states.put( Bundle.INSTALLED, "INSTALLED" );
-        states.put( Bundle.RESOLVED, "RESOLVED" );
-        states.put( Bundle.STARTING, "STARTING" );
-        states.put( Bundle.STOPPING, "STOPPING" );
-        states.put( Bundle.ACTIVE, "ACTIVE" );
-        BundleContext bundleContext = framework.getBundleContext();
-        Bundle[] bundles = bundleContext.getBundles();
-        for ( Bundle bundle : bundles )
+        ClassLoader classLoader = this.getClassLoader();
+        Thread thread = Thread.currentThread();
+        ClassLoader contextClassLoader = thread.getContextClassLoader();
+        thread.setContextClassLoader( classLoader );
+        try
         {
-            long bundleId = bundle.getBundleId();
-            int bundleState = bundle.getState();
-            String state = null;
-            for ( Map.Entry<Integer, String> entry : states.entrySet() )
+            framework.start();
+            Logger logger = this.getLogger();
+            String category = this.getClass().getName();
+            logger.info( String.format( "%4s|%-11s|%s", "ID", "State", "Level", "Name" ), category );
+            Map<Integer, String> states = new LinkedHashMap<Integer, String>( 6 );
+            states.put( Bundle.UNINSTALLED, "UNINSTALLED" );
+            states.put( Bundle.INSTALLED, "INSTALLED" );
+            states.put( Bundle.RESOLVED, "RESOLVED" );
+            states.put( Bundle.STARTING, "STARTING" );
+            states.put( Bundle.STOPPING, "STOPPING" );
+            states.put( Bundle.ACTIVE, "ACTIVE" );
+            BundleContext bundleContext = framework.getBundleContext();
+            Bundle[] bundles = bundleContext.getBundles();
+            for ( Bundle bundle : bundles )
             {
-                int key = entry.getKey();
-                if ( ( key & bundleState ) > 0 )
+                long bundleId = bundle.getBundleId();
+                int bundleState = bundle.getState();
+                String state = null;
+                for ( Map.Entry<Integer, String> entry : states.entrySet() )
                 {
-                    state = entry.getValue();
-                    break;
+                    int key = entry.getKey();
+                    if ( ( key & bundleState ) > 0 )
+                    {
+                        state = entry.getValue();
+                        break;
+                    }
                 }
+                String symbolicName = bundle.getSymbolicName();
+                Version version = bundle.getVersion();
+                String message = String.format( "%4d|%-11s|%s (%s)", bundleId, state, symbolicName, version.toString() );
+                logger.info( message, category );
             }
-            String symbolicName = bundle.getSymbolicName();
-            Version version = bundle.getVersion();
-            String message = String.format( "%4d|%-11s|%s (%s)", bundleId, state, symbolicName, version.toString() );
-            logger.info( message, category );
+        }
+        finally
+        {
+            thread.setContextClassLoader( contextClassLoader );
         }
     }
 
@@ -199,7 +156,18 @@ public class OsgiEmbeddedLocalContainer
     protected void doStop()
         throws BundleException, SecurityException, InterruptedException
     {
-        framework.stop();
+        ClassLoader classLoader = this.getClassLoader();
+        Thread thread = Thread.currentThread();
+        ClassLoader contextClassLoader = thread.getContextClassLoader();
+        thread.setContextClassLoader( classLoader );
+        try
+        {
+            framework.stop();
+        }
+        finally
+        {
+            thread.setContextClassLoader( contextClassLoader );
+        }
         long timeout = this.getTimeout();
         framework.waitForStop( timeout );
     }

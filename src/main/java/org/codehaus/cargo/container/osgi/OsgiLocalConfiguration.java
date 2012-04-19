@@ -1,18 +1,10 @@
 package org.codehaus.cargo.container.osgi;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.codehaus.cargo.container.LocalContainer;
 import org.codehaus.cargo.container.configuration.ConfigurationCapability;
 import org.codehaus.cargo.container.configuration.ConfigurationType;
-import org.codehaus.cargo.container.deployable.Deployable;
-import org.codehaus.cargo.container.deployable.DeployableException;
 import org.codehaus.cargo.container.property.ServletPropertySet;
 import org.codehaus.cargo.container.spi.configuration.AbstractLocalConfiguration;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.launch.Framework;
 
@@ -48,40 +40,7 @@ public class OsgiLocalConfiguration
     {
         OsgiEmbeddedLocalContainer embeddedLocalContainer = (OsgiEmbeddedLocalContainer) container;
         Framework framework = embeddedLocalContainer.getBundle();
-        BundleContext bundleContext = framework.getBundleContext();
-        if ( bundleContext == null )
-        {
-            framework.init();
-            List<Deployable> deployables = this.getDeployables();
-            Map<Long, Deployable> bundles = new LinkedHashMap<Long, Deployable>( deployables.size() );
-            for ( Deployable deployable : deployables )
-            {
-                try
-                {
-                    Bundle bundle = embeddedLocalContainer.installBundle( deployable );
-                    long bundleId = bundle.getBundleId();
-                    bundles.put( bundleId, deployable );
-                }
-                catch ( BundleException e )
-                {
-                    throw new DeployableException( deployable.toString(), e );
-                }
-            }
-            bundleContext = framework.getBundleContext();
-            for ( long bundleId : bundles.keySet() )
-            {
-                Bundle bundle = bundleContext.getBundle( bundleId );
-                try
-                {
-                    OsgiEmbeddedLocalContainer.start( bundle );
-                }
-                catch ( BundleException e )
-                {
-                    Deployable deployable = bundles.get( bundleId );
-                    throw new DeployableException( deployable.toString(), e );
-                }
-            }
-        }
+        framework.init();
     }
 
 }

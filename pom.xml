@@ -7,6 +7,7 @@
 		<version>1.2.1</version>
 	</parent>
 	<artifactId>cargo-container-osgi</artifactId>
+	<version>1.2.1-SNAPSHOT</version>
 	<name>Cargo OSGi Container</name>
 	<description>Core API implementation for OSGi Service Platform Release 4 Version 4.2</description>
 	<build>
@@ -21,6 +22,9 @@
 							<goal>verify</goal>
 						</goals>
 						<configuration>
+							<pomExcludes>
+								<pomExclude>logging/pom.xml</pomExclude>
+							</pomExcludes>
 							<localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
 							<settingsFile>src/it/settings.xml</settingsFile>
 							<cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
@@ -72,6 +76,7 @@
 						<configuration>
 							<descriptors>
 								<descriptor>src/main/assembly/proxy.xml</descriptor>
+								<descriptor>src/main/assembly/deployer.xml</descriptor>
 							</descriptors>
 						</configuration>
 					</execution>
@@ -84,6 +89,21 @@
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.core</artifactId>
 			<version>4.2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>${project.parent.groupId}</groupId>
+			<artifactId>cargo-core-api-module</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${project.parent.groupId}</groupId>
+			<artifactId>cargo-core-api-generic</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${project.parent.groupId}</groupId>
+			<artifactId>cargo-core-api-container</artifactId>
+			<version>${project.parent.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.javassist</groupId>

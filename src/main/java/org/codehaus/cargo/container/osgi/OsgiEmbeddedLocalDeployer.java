@@ -1,6 +1,9 @@
 package org.codehaus.cargo.container.osgi;
 
+import java.io.File;
 import java.io.InputStream;
+import java.net.URI;
+import java.util.AbstractMap;
 import java.util.Dictionary;
 import java.util.Map;
 
@@ -9,21 +12,37 @@ import org.codehaus.cargo.container.configuration.LocalConfiguration;
 import org.codehaus.cargo.container.deployable.Deployable;
 import org.codehaus.cargo.container.deployable.DeployableException;
 import org.codehaus.cargo.container.spi.deployer.AbstractEmbeddedLocalDeployer;
+import org.codehaus.cargo.util.FileHandler;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.BundleReference;
 import org.osgi.framework.Constants;
 
-public class OsgiEmbeddedLocalDeployer
+public class OsgiEmbeddedLocalDeployer<T extends EmbeddedLocalContainer & BundleReference>
     extends AbstractEmbeddedLocalDeployer
 {
 
-    public OsgiEmbeddedLocalDeployer( EmbeddedLocalContainer embeddedLocalContainer )
+    private static final String REFERENCE = "reference:";
+
+    private static String getLocation( Deployable deployable )
+    {
+        String location = deployable.getFile();
+        File file = new File( location );
+        if ( file.exists() )
+        {
+            URI uri = file.toURI();
+            location = REFERENCE + uri.toString();
+        }
+        return location;
+    }
+
+    public OsgiEmbeddedLocalDeployer( T embeddedLocalContainer )
     {
         super( embeddedLocalContainer );
-        OsgiEmbeddedLocalContainer container = this.getContainer();
-        Bundle bundle = container.getBundle();
-        BundleContext bundleContext = bundle.getBundleContext();
+        BundleReference bundleReference = this.getContainer();
+        Bundle framework = bundleReference.getBundle();
+        BundleContext bundleContext = framework.getBundleContext();
         if ( bundleContext == null )
         {
             LocalConfiguration configuration = embeddedLocalContainer.getConfiguration();
@@ -31,19 +50,35 @@ public class OsgiEmbeddedLocalDeployer
         }
     }
 
-    @Override
-    protected OsgiEmbeddedLocalContainer getContainer()
+    private Map.Entry<String, InputStream> getInputStream( Deployable deployable )
     {
-        return (OsgiEmbeddedLocalContainer) super.getContainer();
+        String location = getLocation( deployable );
+        InputStream inputStream = null;
+        if ( !location.startsWith( REFERENCE ) )
+        {
+            FileHandler fileHandler = this.getFileHandler();
+            inputStream = fileHandler.getInputStream( location );
+        }
+        Map.Entry<String, InputStream> entry =
+            new AbstractMap.SimpleImmutableEntry<String, InputStream>( location, inputStream );
+        return entry;
+    }
+
+    @Override
+    protected T getContainer()
+    {
+        @SuppressWarnings( "unchecked" )
+        T container = (T) super.getContainer();
+        return container;
     }
 
     protected Bundle findBundle( Deployable deployable )
     {
-        OsgiEmbeddedLocalContainer container = this.getContainer();
-        Bundle framework = container.getBundle();
+        BundleReference bundleReference = this.getContainer();
+        Bundle framework = bundleReference.getBundle();
         BundleContext bundleContext = framework.getBundleContext();
         Bundle[] candidateBundles = bundleContext.getBundles();
-        String location = OsgiEmbeddedLocalContainer.getLocation( deployable );
+        String location = getLocation( deployable );
         Bundle bundle = null;
         for ( Bundle candidateBundle : candidateBundles )
         {
@@ -60,97 +95,166 @@ public class OsgiEmbeddedLocalDeployer
     @Override
     public void deploy( Deployable deployable )
     {
-        OsgiEmbeddedLocalContainer container = this.getContainer();
+        T container = this.getContainer();
+        ClassLoader classLoader = container.getClassLoader();
+        Thread thread = Thread.currentThread();
+        ClassLoader contextClassLoader = thread.getContextClassLoader();
+        thread.setContextClassLoader( classLoader );
         try
         {
-            container.installBundle( deployable );
+            Map.Entry<String, InputStream> entry = getInputStream( deployable );
+            String location = entry.getKey();
+            InputStream inputStream = entry.getValue();
+            BundleReference bundleReference = this.getContainer();
+            Bundle framework = bundleReference.getBundle();
+            BundleContext bundleContext = framework.getBundleContext();
+            try
+            {
+                bundleContext.installBundle( location, inputStream );
+            }
+            catch ( BundleException e )
+            {
+                throw new DeployableException( deployable.toString(), e );
+            }
         }
-        catch ( BundleException e )
+        finally
         {
-            throw new DeployableException( deployable.toString(), e );
+            thread.setContextClassLoader( contextClassLoader );
         }
     }
 
     @Override
     public void start( Deployable deployable )
     {
-        Bundle bundle = findBundle( deployable );
-        if ( bundle != null )
+        T container = this.getContainer();
+        ClassLoader classLoader = container.getClassLoader();
+        Thread thread = Thread.currentThread();
+        ClassLoader contextClassLoader = thread.getContextClassLoader();
+        thread.setContextClassLoader( classLoader );
+        try
         {
-            try
+            Bundle bundle = findBundle( deployable );
+            if ( bundle != null )
             {
-                OsgiEmbeddedLocalContainer.start( bundle );
+                Dictionary<?, ?> headers = bundle.getHeaders();
+                String fragmentHost = (String) headers.get( Constants.FRAGMENT_HOST );
+                if ( fragmentHost == null )
+                {
+                    try
+                    {
+                        bundle.start( Bundle.START_ACTIVATION_POLICY );
+                    }
+                    catch ( BundleException e )
+                    {
+                        throw new DeployableException( deployable.toString(), e );
+                    }
+                }
             }
-            catch ( BundleException e )
-            {
-                throw new DeployableException( deployable.toString(), e );
-            }
+        }
+        finally
+        {
+            thread.setContextClassLoader( contextClassLoader );
         }
     }
 
     @Override
     public void stop( Deployable deployable )
     {
-        Bundle bundle = findBundle( deployable );
-        if ( bundle != null )
+        T container = this.getContainer();
+        ClassLoader classLoader = container.getClassLoader();
+        Thread thread = Thread.currentThread();
+        ClassLoader contextClassLoader = thread.getContextClassLoader();
+        thread.setContextClassLoader( classLoader );
+        try
         {
-            try
+            Bundle bundle = findBundle( deployable );
+            if ( bundle != null )
             {
-                Dictionary<?, ?> headers = bundle.getHeaders();
-                String fragmentHost = (String) headers.get( Constants.FRAGMENT_HOST );
-                if ( fragmentHost == null )
+                try
                 {
-                    bundle.stop();
+                    Dictionary<?, ?> headers = bundle.getHeaders();
+                    String fragmentHost = (String) headers.get( Constants.FRAGMENT_HOST );
+                    if ( fragmentHost == null )
+                    {
+                        bundle.stop();
+                    }
+                }
+                catch ( BundleException e )
+                {
+                    throw new DeployableException( deployable.toString(), e );
                 }
             }
-            catch ( BundleException e )
-            {
-                throw new DeployableException( deployable.toString(), e );
-            }
+        }
+        finally
+        {
+            thread.setContextClassLoader( contextClassLoader );
         }
     }
 
     @Override
     public void undeploy( Deployable deployable )
     {
-        Bundle bundle = findBundle( deployable );
-        if ( bundle != null )
+        T container = this.getContainer();
+        ClassLoader classLoader = container.getClassLoader();
+        Thread thread = Thread.currentThread();
+        ClassLoader contextClassLoader = thread.getContextClassLoader();
+        thread.setContextClassLoader( classLoader );
+        try
         {
-            try
+            Bundle bundle = findBundle( deployable );
+            if ( bundle != null )
             {
-                bundle.uninstall();
+                try
+                {
+                    bundle.uninstall();
+                }
+                catch ( BundleException e )
+                {
+                    throw new DeployableException( deployable.toString(), e );
+                }
             }
-            catch ( BundleException e )
-            {
-                throw new DeployableException( deployable.toString(), e );
-            }
+        }
+        finally
+        {
+            thread.setContextClassLoader( contextClassLoader );
         }
     }
 
     @Override
     public void redeploy( Deployable deployable )
     {
-        Bundle bundle = findBundle( deployable );
-        if ( bundle != null )
+        T container = this.getContainer();
+        ClassLoader classLoader = container.getClassLoader();
+        Thread thread = Thread.currentThread();
+        ClassLoader contextClassLoader = thread.getContextClassLoader();
+        thread.setContextClassLoader( classLoader );
+        try
         {
-            OsgiEmbeddedLocalContainer container = this.getContainer();
-            Map.Entry<String, InputStream> entry = container.getInputStream( deployable );
-            InputStream inputStream = entry.getValue();
-            try
+            Bundle bundle = findBundle( deployable );
+            if ( bundle != null )
             {
-                if ( inputStream == null )
+                Map.Entry<String, InputStream> entry = this.getInputStream( deployable );
+                InputStream inputStream = entry.getValue();
+                try
                 {
-                    bundle.update();
+                    if ( inputStream == null )
+                    {
+                        bundle.update();
+                    }
+                    else
+                    {
+                        bundle.update( inputStream );
+                    }
                 }
-                else
+                catch ( BundleException e )
                 {
-                    bundle.update( inputStream );
+                    throw new DeployableException( deployable.toString(), e );
                 }
             }
-            catch ( BundleException e )
-            {
-                throw new DeployableException( deployable.toString(), e );
-            }
+        }
+        finally
+        {
+            thread.setContextClassLoader( contextClassLoader );
         }
     }
 
