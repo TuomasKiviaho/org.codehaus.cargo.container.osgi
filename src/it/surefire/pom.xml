@@ -185,7 +185,7 @@
 								</Import-Package>
 								<Export-Package />
 								<Bundle-SymbolicName>${project.groupId}</Bundle-SymbolicName>
-								<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
+								<Embed-Dependency>!netty,*;scope=compile|runtime</Embed-Dependency>
 								<Embed-Directory>META-INF/lib</Embed-Directory>
 								<Embed-Transitive>true</Embed-Transitive>
 								<Bundle-Activator>org.apache.maven.surefire.osgi.Activator</Bundle-Activator>
@@ -210,6 +210,32 @@
 								<Embed-Dependency>junit;</Embed-Dependency>
 								<Embed-Directory>META-INF/lib</Embed-Directory>
 							</instructions>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>1.6</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<artifactSet>
+								<includes>
+									<include>io.netty:*</include>
+								</includes>
+							</artifactSet>
+							<relocations>
+								<relocation>
+									<pattern>org.jboss.netty</pattern>
+									<shadedPattern>${project.groupId}.osgi.netty</shadedPattern>
+								</relocation>
+							</relocations>
 						</configuration>
 					</execution>
 				</executions>
@@ -276,10 +302,6 @@
 								<groupId>org.apache.felix</groupId>
 								<artifactId>org.apache.felix.gogo.shell</artifactId>
 							</deployable>
-							<deployable>
-								<groupId>org.apache.felix</groupId>
-								<artifactId>org.apache.felix.gogo.command</artifactId>
-							</deployable>
 						</deployables>
 					</configuration>
 					<deployer>
@@ -340,6 +362,11 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty</artifactId>
+			<version>3.3.1.Final</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.maven.surefire</groupId>
 			<artifactId>surefire-booter</artifactId>
 		</dependency>
@@ -347,12 +374,6 @@
 			<groupId>org.codehaus.plexus</groupId>
 			<artifactId>plexus-utils</artifactId>
 			<scope>runtime</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty</artifactId>
-			<version>3.3.1.Final</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.aspectj</groupId>
@@ -385,13 +406,6 @@
 			<groupId>org.apache.felix</groupId>
 			<artifactId>org.apache.felix.shell.remote</artifactId>
 			<version>1.1.2</version>
-			<type>bundle</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.felix</groupId>
-			<artifactId>org.apache.felix.gogo.command</artifactId>
-			<version>0.10.0</version>
 			<type>bundle</type>
 			<scope>test</scope>
 		</dependency>

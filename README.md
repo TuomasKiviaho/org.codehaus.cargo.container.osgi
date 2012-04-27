@@ -28,7 +28,7 @@ chosen due to the restrictions of Maven Surefire Booter API and the fact that th
 that could utilize the Provider API. Idea is to grab control of the forking of the process and 
 instead run the tests inside OSGi framework. This is done using both Apache Felix Gogo and Remote 
 Shell that provide a lightweight remoting via CLI over telnet. JMX and other mechanisms such as
-fullblown D-OSGi were considered but this aproach was closest to the spirit of Surefire Booter API.
+full blown D-OSGi were considered but this approach was closest to the spirit of Surefire Booter API.
 
 Usage:
 
@@ -97,8 +97,8 @@ Usage:
 						<type>bundle</type>
 					</deployable>
 					<deployable>
-						<groupId>org.apache.felix</groupId>
-						<artifactId>org.apache.felix.gogo.command</artifactId>
+						<groupId>org.codehaus.cargo</groupId>
+						<artifactId>cargo-container-osgi</artifactId>
 						<type>bundle</type>
 					</deployable>
 				</deployables>

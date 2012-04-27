@@ -207,12 +207,11 @@ public class ForkedBooterAspect {
 				MessageEvent messageEvent) throws Exception {
 			String message = (String) messageEvent.getMessage();
 			if (this.consoleLogger == null) {
-				System.out.println(message);
+				this.printStream.println(message);
 				if (message.startsWith(BYE)) {
 					Channel channel = messageEvent.getChannel();
 					byte[] bytes = new byte[] { 4 };
 					channel.write(ChannelBuffers.wrappedBuffer(bytes));
-					channel.close();
 				}
 			} else {
 				this.consoleLogger.info(message + LINE_SEPARATOR);

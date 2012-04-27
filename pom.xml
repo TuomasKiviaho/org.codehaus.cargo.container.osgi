@@ -57,7 +57,7 @@
 						<configuration>
 							<artifacts>
 								<artifact>
-									<file>${project.build.directory}/it/surefire/target/surefire-osgi-2.12.jar</file>
+									<file>${project.build.directory}/it/surefire/target/surefire-osgi-2.12-shaded.jar</file>
 									<classifier>surefire</classifier>
 								</artifact>
 							</artifacts>
