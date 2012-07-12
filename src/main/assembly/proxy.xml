@@ -12,6 +12,7 @@
 			<directory>${project.build.outputDirectory}</directory>
 			<outputDirectory>/</outputDirectory>
 			<includes>
+				<include>org/codehaus/cargo/container/osgi/ServiceTracker.class</include>
 				<include>org/codehaus/cargo/container/osgi/Proxy.class</include>
 				<include>org/codehaus/cargo/container/osgi/Proxy$*.class</include>
 			</includes>

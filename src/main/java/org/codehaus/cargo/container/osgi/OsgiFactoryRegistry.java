@@ -14,8 +14,7 @@ import org.codehaus.cargo.generic.deployable.DeployableFactory;
 import org.codehaus.cargo.generic.deployer.DeployerFactory;
 import org.codehaus.cargo.generic.packager.PackagerFactory;
 
-public class OsgiFactoryRegistry
-    extends AbstractFactoryRegistry
+public class OsgiFactoryRegistry extends AbstractFactoryRegistry
 {
 
     public static final String CONTAINER_ID = "osgi";
@@ -26,48 +25,51 @@ public class OsgiFactoryRegistry
     }
 
     @Override
-    protected void register( DeployableFactory deployableFactory )
+    protected void register(DeployableFactory deployableFactory)
     {
-        deployableFactory.registerDeployable( CONTAINER_ID, DeployableType.toType( "jar" ), Bundle.class );
+        deployableFactory.registerDeployable(CONTAINER_ID, DeployableType.toType("jar"),
+            Bundle.class);
     }
 
     @Override
-    protected void register( ConfigurationCapabilityFactory configurationCapabilityFactory )
+    protected void register(ConfigurationCapabilityFactory configurationCapabilityFactory)
     {
-        configurationCapabilityFactory.registerConfigurationCapability( CONTAINER_ID, ContainerType.EMBEDDED,
-                                                                        ConfigurationType.RUNTIME,
-                                                                        OsgiConfigurationCapability.class );
+        configurationCapabilityFactory.registerConfigurationCapability(CONTAINER_ID,
+            ContainerType.EMBEDDED, ConfigurationType.RUNTIME, OsgiConfigurationCapability.class);
     }
 
     @Override
-    protected void register( ConfigurationFactory configurationFactory )
+    protected void register(ConfigurationFactory configurationFactory)
     {
-        configurationFactory.registerConfiguration( CONTAINER_ID, ContainerType.EMBEDDED, ConfigurationType.RUNTIME,
-                                                    OsgiLocalConfiguration.class );
+        configurationFactory.registerConfiguration(CONTAINER_ID, ContainerType.EMBEDDED,
+            ConfigurationType.RUNTIME, OsgiLocalConfiguration.class);
     }
 
     @Override
-    protected void register( DeployerFactory deployerFactory )
+    protected void register(DeployerFactory deployerFactory)
     {
-        deployerFactory.registerDeployer( CONTAINER_ID, DeployerType.EMBEDDED, OsgiEmbeddedLocalDeployer.class );
+        deployerFactory.registerDeployer(CONTAINER_ID, DeployerType.EMBEDDED,
+            OsgiEmbeddedLocalDeployer.class);
     }
 
     @Override
-    protected void register( PackagerFactory packagerFactory )
+    protected void register(PackagerFactory packagerFactory)
     {
         return;
     }
 
     @Override
-    protected void register( ContainerFactory containerFactory )
+    protected void register(ContainerFactory containerFactory)
     {
-        containerFactory.registerContainer( CONTAINER_ID, ContainerType.EMBEDDED, OsgiEmbeddedLocalContainer.class );
+        containerFactory.registerContainer(CONTAINER_ID, ContainerType.EMBEDDED,
+            OsgiEmbeddedLocalContainer.class);
     }
 
     @Override
-    protected void register( ContainerCapabilityFactory containerCapabilityFactory )
+    protected void register(ContainerCapabilityFactory containerCapabilityFactory)
     {
-        containerCapabilityFactory.registerContainerCapability( CONTAINER_ID, OsgiContainerCapability.class );
+        containerCapabilityFactory.registerContainerCapability(CONTAINER_ID,
+            OsgiContainerCapability.class);
     }
 
 }

@@ -7,8 +7,7 @@ import java.util.Set;
 import org.codehaus.cargo.container.ContainerCapability;
 import org.codehaus.cargo.container.deployable.DeployableType;
 
-public class OsgiContainerCapability
-    implements ContainerCapability
+public class OsgiContainerCapability implements ContainerCapability
 {
 
     public static final ContainerCapability INSTANCE = new OsgiContainerCapability();
@@ -18,12 +17,13 @@ public class OsgiContainerCapability
     public OsgiContainerCapability()
     {
         this.deployableTypes =
-            new HashSet<DeployableType>( Arrays.asList( DeployableType.BUNDLE, DeployableType.toType( "jar" ) ) );
+            new HashSet<DeployableType>(Arrays.asList(DeployableType.BUNDLE,
+                DeployableType.toType("jar")));
     }
 
-    public boolean supportsDeployableType( DeployableType deployableType )
+    public boolean supportsDeployableType(DeployableType deployableType)
     {
-        return this.deployableTypes.contains( deployableType );
+        return this.deployableTypes.contains(deployableType);
     }
 
 }

@@ -3,11 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.codehaus.cargo</groupId>
-		<artifactId>cargo-core-containers</artifactId>
-		<version>1.2.1</version>
+		<artifactId>cargo-core</artifactId>
+		<version>1.2.2</version>
 	</parent>
 	<artifactId>cargo-container-osgi</artifactId>
-	<version>1.2.1-SNAPSHOT</version>
+	<version>1.2.2-SNAPSHOT</version>
 	<name>Cargo OSGi Container</name>
 	<description>Core API implementation for OSGi Service Platform Release 4 Version 4.2</description>
 	<build>
@@ -22,9 +22,6 @@
 							<goal>verify</goal>
 						</goals>
 						<configuration>
-							<pomExcludes>
-								<pomExclude>logging/pom.xml</pomExclude>
-							</pomExcludes>
 							<localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
 							<settingsFile>src/it/settings.xml</settingsFile>
 							<cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
@@ -88,20 +85,30 @@
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.core</artifactId>
-			<version>4.2.0</version>
+			<version>5.0.0</version>
 		</dependency>
 		<dependency>
-			<groupId>${project.parent.groupId}</groupId>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.compendium</artifactId>
+			<version>4.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.cargo</groupId>
 			<artifactId>cargo-core-api-module</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>${project.parent.groupId}</groupId>
+			<groupId>org.codehaus.cargo</groupId>
+			<artifactId>cargo-core-api-util</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.cargo</groupId>
 			<artifactId>cargo-core-api-generic</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>${project.parent.groupId}</groupId>
+			<groupId>org.codehaus.cargo</groupId>
 			<artifactId>cargo-core-api-container</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>

@@ -176,7 +176,6 @@
 						</goals>
 						<configuration>
 							<unpackBundle>true</unpackBundle>
-							<outputDirectory>${project.build.directory}/generated-classes</outputDirectory>
 							<instructions>
 								<Import-Package>
 									!org.jboss.netty.*,
@@ -184,7 +183,7 @@
 									*
 								</Import-Package>
 								<Export-Package />
-								<Bundle-SymbolicName>${project.groupId}</Bundle-SymbolicName>
+								<Bundle-SymbolicName>${project.groupId}.osgi</Bundle-SymbolicName>
 								<Embed-Dependency>!netty,*;scope=compile|runtime</Embed-Dependency>
 								<Embed-Directory>META-INF/lib</Embed-Directory>
 								<Embed-Transitive>true</Embed-Transitive>
@@ -202,11 +201,14 @@
 							<classifier>tests</classifier>
 							<outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
 							<instructions>
-								<Import-Package>!javax.swing.*,*</Import-Package>
+								<Import-Package>
+									!javax.swing.*,
+									*
+								</Import-Package>
 								<Import-Resource>src/test/resources</Import-Resource>
 								<_sourcepath>${project.build.testSourceDirectory}</_sourcepath>
-								<Fragment-Host>${project.groupId}</Fragment-Host>
-								<Bundle-SymbolicName>${project.groupId}.tests</Bundle-SymbolicName>
+								<Fragment-Host>${project.groupId}.osgi</Fragment-Host>
+								<Bundle-SymbolicName>${project.groupId}.osgi.tests</Bundle-SymbolicName>
 								<Embed-Dependency>junit;</Embed-Dependency>
 								<Embed-Directory>META-INF/lib</Embed-Directory>
 							</instructions>
@@ -217,7 +219,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>1.6</version>
 				<executions>
 					<execution>
 						<goals>
