@@ -11,80 +11,11 @@
 	<name>Surefire Forked Booter for OSGi Framework</name>
 	<description>Surefire Forked Booter over Apache Felix Gogo/Remote Shell</description>
 	<build>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.eclipse.m2e</groupId>
-					<artifactId>lifecycle-mapping</artifactId>
-					<version>1.0.0</version>
-					<configuration>
-						<lifecycleMappingMetadata>
-							<pluginExecutions>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>org.apache.maven.plugins</groupId>
-										<artifactId>maven-dependency-plugin</artifactId>
-										<versionRange>[2.1,)</versionRange>
-										<goals>
-											<goal>unpack</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<execute />
-									</action>
-								</pluginExecution>
-							</pluginExecutions>
-						</lifecycleMappingMetadata>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
 		<plugins>
-			<plugin>
-				<artifactId>maven-resources-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>copy-resources</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>${project.build.directory}/generated-classes</outputDirectory>
-							<resources>
-								<resource>
-									<directory>${project.build.outputDirectory}</directory>
-									<excludes>
-										<exclude>org/osgi/**/*</exclude>
-									</excludes>
-								</resource>
-							</resources>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
 			<plugin>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<version>2.1</version>
 				<executions>
-					<execution>
-						<id>generate-sources</id>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>unpack</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
-							<artifactItems>
-								<artifactItem>
-									<groupId>org.osgi</groupId>
-									<artifactId>org.osgi.core</artifactId>
-									<version>4.3.0</version>
-									<classifier>sources</classifier>
-								</artifactItem>
-							</artifactItems>
-							<includes>**/*.java</includes>
-						</configuration>
-					</execution>
 					<execution>
 						<phase>pre-integration-test</phase>
 						<goals>
@@ -115,18 +46,7 @@
 						</goals>
 					</execution>
 					<execution>
-						<id>add-source</id>
-						<goals>
-							<goal>add-source</goal>
-						</goals>
-						<configuration>
-							<sources>
-								<source>${project.build.directory}/generated-sources</source>
-							</sources>
-						</configuration>
-					</execution>
-					<execution>
-						<id>pre-integration-test</id>
+						<id>osgi.shell.telnet.port</id>
 						<phase>pre-integration-test</phase>
 						<goals>
 							<goal>reserve-network-port</goal>
@@ -156,10 +76,6 @@
 									<Eclipse-SourceBundle>${project.groupId}.osgi;version="${parsedVersion.osgiVersion}";roots:="."</Eclipse-SourceBundle>
 								</manifestEntries>
 							</archive>
-							<excludes>
-								<exclude>org/osgi</exclude>
-								<exclude>org/osgi/**/*</exclude>
-							</excludes>
 						</configuration>
 					</execution>
 				</executions>
@@ -171,6 +87,7 @@
 				<extensions>true</extensions>
 				<executions>
 					<execution>
+						<id>default-bundle</id>
 						<goals>
 							<goal>bundle</goal>
 						</goals>
@@ -180,6 +97,8 @@
 								<Import-Package>
 									!org.jboss.netty.*,
 									!org.aspectj.*,
+									org.osgi.framework;version="[1.5,2)",
+									org.osgi.framework.wiring;version="[1.0,2)",
 									*
 								</Import-Package>
 								<Export-Package />
@@ -192,7 +111,7 @@
 						</configuration>
 					</execution>
 					<execution>
-						<id>test-jar</id>
+						<id>default-test-bundle</id>
 						<goals>
 							<goal>bundle</goal>
 						</goals>
@@ -200,9 +119,11 @@
 							<unpackBundle>true</unpackBundle>
 							<classifier>tests</classifier>
 							<outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+							<manifestLocation>${project.build.testOutputDirectory}/META-INF</manifestLocation>
 							<instructions>
 								<Import-Package>
 									!javax.swing.*,
+									org.osgi.framework;version="[1.5,2)",
 									*
 								</Import-Package>
 								<Import-Resource>src/test/resources</Import-Resource>
@@ -316,9 +237,9 @@
 				</configuration>
 				<dependencies>
 					<dependency>
-						<groupId>@project.groupId@</groupId>
-						<artifactId>@project.artifactId@</artifactId>
-						<version>@project.version@</version>
+						<groupId>org.codehaus.cargo</groupId>
+						<artifactId>cargo-container-osgi</artifactId>
+						<version>1.2.2-SNAPSHOT</version>
 					</dependency>
 				</dependencies>
 			</plugin>
@@ -359,7 +280,7 @@
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.core</artifactId>
-			<version>4.3.0</version>
+			<version>5.0.0</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
