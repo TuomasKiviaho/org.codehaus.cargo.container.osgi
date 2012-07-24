@@ -47,7 +47,6 @@ public class OsgiLocalConfiguration extends AbstractLocalConfiguration
                 || (LogLevel.INFO.equals(logLevel) && level <= LogService.LOG_INFO)
                 || (LogLevel.DEBUG.equals(logLevel) && level <= LogService.LOG_DEBUG))
             {
-
                 String message = entry.getMessage();
                 Throwable exception = entry.getException();
                 if (exception != null)

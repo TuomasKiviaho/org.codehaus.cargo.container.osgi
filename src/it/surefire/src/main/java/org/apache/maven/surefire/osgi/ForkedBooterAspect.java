@@ -276,7 +276,7 @@ public class ForkedBooterAspect
             ChannelDownstreamHandler stringEncoder = new TelnetEncoder(CHARSET);
             ChannelUpstreamHandler stringDecoder = new TelnetDecoder(CHARSET);
             ChannelUpstreamHandler delimiterBasedFrameDecoder =
-                new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter());
+                new DelimiterBasedFrameDecoder(Integer.MAX_VALUE, Delimiters.lineDelimiter());
             ChannelHandler telnetHandler = new TelnetHandler(originalSystemOut);
             ChannelPipeline channelPipeLine = new DefaultChannelPipeline();
             for (ChannelHandler channelHandler : Arrays.asList(delimiterBasedFrameDecoder,
