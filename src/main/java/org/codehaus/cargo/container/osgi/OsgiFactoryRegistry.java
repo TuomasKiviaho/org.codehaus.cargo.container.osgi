@@ -35,14 +35,14 @@ public class OsgiFactoryRegistry extends AbstractFactoryRegistry
     protected void register(ConfigurationCapabilityFactory configurationCapabilityFactory)
     {
         configurationCapabilityFactory.registerConfigurationCapability(CONTAINER_ID,
-            ContainerType.EMBEDDED, ConfigurationType.RUNTIME, OsgiConfigurationCapability.class);
+            ContainerType.EMBEDDED, ConfigurationType.STANDALONE, OsgiConfigurationCapability.class);
     }
 
     @Override
     protected void register(ConfigurationFactory configurationFactory)
     {
         configurationFactory.registerConfiguration(CONTAINER_ID, ContainerType.EMBEDDED,
-            ConfigurationType.RUNTIME, OsgiLocalConfiguration.class);
+            ConfigurationType.STANDALONE, OsgiLocalConfiguration.class);
     }
 
     @Override

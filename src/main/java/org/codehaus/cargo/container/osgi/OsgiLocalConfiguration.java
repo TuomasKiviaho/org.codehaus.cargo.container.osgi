@@ -58,7 +58,7 @@ public class OsgiLocalConfiguration extends AbstractLocalConfiguration
                     message = stringWriter.toString();
                 }
                 String category = ""; // FIXME fix cargo to accept logs without category
-                ServiceReference<?> serviceReference = entry.getServiceReference();
+                ServiceReference< ? > serviceReference = entry.getServiceReference();
                 if (serviceReference != null)
                 {
                     String[] objectClass =
@@ -87,7 +87,7 @@ public class OsgiLocalConfiguration extends AbstractLocalConfiguration
 
     private static final ConfigurationCapability CAPABILITY = new OsgiConfigurationCapability();
 
-    public OsgiLocalConfiguration()
+    public OsgiLocalConfiguration(String home)
     {
         super(null);
     }
@@ -99,7 +99,7 @@ public class OsgiLocalConfiguration extends AbstractLocalConfiguration
 
     public ConfigurationType getType()
     {
-        return ConfigurationType.RUNTIME;
+        return ConfigurationType.STANDALONE;
     }
 
     @Override

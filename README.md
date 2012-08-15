@@ -36,7 +36,7 @@ Usage:
 	<plugin>
 		<groupId>org.codehaus.cargo</groupId>
 		<artifactId>cargo-maven2-plugin</artifactId>
-		<version>1.2.1</version>
+		<version>1.2.4-SNAPSHOT</version>
 		<executions>
 			<execution>
 				<id>default-cli</id>
@@ -75,6 +75,14 @@ Usage:
 						<type>bundle</type>
 					</dependency>
 				</dependencies>
+			</container>
+			<configuration>
+				<type>standalone</type>
+				<properties>
+					<org.osgi.framework.storage>${project.build.directory}/felix-cache</org.osgi.framework.storage>
+					<org.osgi.framework.storage.clean>onFirstInit</org.osgi.framework.storage.clean>
+					<osgi.shell.telnet.port>${osgi.shell.telnet.port}</osgi.shell.telnet.port>
+				</properties>
 				<deployables>
 					<dependency>
 						<groupId>org.apache.felix</groupId>
@@ -101,16 +109,6 @@ Usage:
 						<artifactId>cargo-container-osgi</artifactId>
 						<type>bundle</type>
 					</deployable>
-				</deployables>
-			</container>
-			<configuration>
-				<type>runtime</type>
-				<properties>
-					<org.osgi.framework.storage>${project.build.directory}/osgi</org.osgi.framework.storage>
-					<org.osgi.framework.storage.clean>onFirstInit</org.osgi.framework.storage.clean>
-					<osgi.shell.telnet.port>${osgi.shell.telnet.port}</osgi.shell.telnet.port>
-				</properties>
-				<deployables>
 					<deployable />
 					<deployable>
 						<classifier>tests</classifier> 
@@ -122,7 +120,7 @@ Usage:
 			<dependency>
 				<groupId>org.codehaus.cargo</groupId>
 				<artifactId>cargo-container-osgi</artifactId>
-				<version>1.2.1</version>
+				<version>1.2.4-SNAPSHOT</version>
 			</dependency>
 		</dependencies>
 	</plugin>

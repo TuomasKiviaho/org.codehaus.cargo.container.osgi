@@ -2,12 +2,18 @@ package org.apache.maven.surefire.osgi;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilterOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -33,24 +39,116 @@ import org.osgi.framework.wiring.BundleWiring;
 public class Booter extends ForkedBooter
 {
 
+    private static class CurrentThreadOutputStream extends FilterOutputStream
+    {
+
+        private InheritableThreadLocal<Boolean> currentThread = new InheritableThreadLocal<Boolean>();
+
+        private Queue<Object> buffers;
+        
+        public CurrentThreadOutputStream(OutputStream out)
+        {
+            super(out);
+            this.currentThread.set(Boolean.TRUE);
+            this.buffers = new LinkedList<Object>();
+        }
+        
+        public void flush() throws IOException {
+            this.flushBuffers();
+            this.flush();
+        }
+        
+        public void flushBuffers() throws IOException {
+            if (!this.buffers.isEmpty())
+            {
+                for (Object buffer : this.buffers)
+                {
+                    if (buffer instanceof Integer)
+                    {
+                        int b = (Integer) buffer;
+                        this.out.write(b); 
+                    } else if (buffer instanceof byte[]) {
+                        byte[] bytes = (byte[]) buffer;
+                        this.out.write(bytes); 
+                    } else {
+                        Object[] array = (Object[]) buffer;
+                        byte[] bytes = (byte[]) array[0];
+                        int offset = (Integer) array[1];
+                        int length = (Integer) array[2];
+                        this.out.write(bytes, offset, length); 
+                    }
+                }
+                this.buffers.clear();
+            }
+        }
+       
+        @Override
+        public synchronized void write(int b) throws IOException
+        {
+            if (this.currentThread.get() == null)
+            {
+                this.buffers.add(Integer.valueOf(b));
+            } else {
+                this.flushBuffers();
+                this.out.write(b);
+            }
+        }
+
+        @Override
+        public synchronized void write(byte[] bytes) throws IOException
+        {
+            if (this.currentThread.get() == null)
+            {
+                this.buffers.add(bytes);
+            } else {
+                this.flushBuffers();
+                this.out.write(bytes);
+            }
+        }
+
+        @Override
+        public synchronized void write(byte[] bytes, int offset, int length) throws IOException
+        {
+            if (this.currentThread.get() == null)
+            {
+                Object[] buffer = new Object[3];
+                buffer[0] = bytes;
+                buffer[1] = offset;
+                buffer[2] = length;
+                this.buffers.add(buffer);
+            } else {
+                this.flushBuffers();
+                this.out.write(bytes, offset, length);
+            }
+        }
+
+    }
+
     public Booter()
     {
         super();
     }
 
-    public static void _main(String[] args) throws Throwable
+    public static synchronized void _main(String[] args) throws Throwable
     {
-        System.out.print(Booter.class.getPackage().getName());
-        System.out.print(':');
-        System.out.print(Booter.class.getSimpleName());
+        PrintStream out = System.out; 
+        out.print(Booter.class.getPackage().getName());
+        out.print(':');
+        out.print(Booter.class.getSimpleName());
         for (int i = 1; i < args.length; i++)
         {
             System.out.print(' ');
-            System.out.print('\'');
-            System.out.print(args[i].replace("'", "'\\''"));
-            System.out.print('\'');
+            out.print('\'');
+            out.print(args[i].replace("'", "'\\''"));
+            out.print('\'');
         }
-        System.out.println();
+        out.println();
+        PrintStream err = System.err;
+        CurrentThreadOutputStream currentOutputStream = new CurrentThreadOutputStream(out);
+        PrintStream outputStream = new PrintStream(currentOutputStream);
+        PrintStream errorStream = out.equals(err) ? out : new PrintStream(new CurrentThreadOutputStream(err));
+        System.setOut(outputStream);
+        System.setErr(errorStream);
         try
         {
             if (args.length > 2)
@@ -149,7 +247,10 @@ public class Booter extends ForkedBooter
         }
         finally
         {
-            System.out.println("Z,0,BYE!");
+            currentOutputStream.flushBuffers();
+            System.setOut(out);
+            System.setErr(err);
+            out.println("Z,0,BYE!");
         }
     }
 

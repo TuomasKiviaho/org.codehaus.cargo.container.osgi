@@ -165,7 +165,7 @@
 			<plugin>
 				<groupId>org.codehaus.cargo</groupId>
 				<artifactId>cargo-maven2-plugin</artifactId>
-				<version>1.2.2</version>
+				<version>@project.version@</version>
 				<executions>
 					<execution>
 						<id>pre-integration-test</id>
@@ -200,46 +200,41 @@
 						</dependencies>
 					</container>
 					<configuration>
-						<type>runtime</type>
 						<properties>
 							<org.osgi.framework.storage>${project.build.directory}/felix-cache</org.osgi.framework.storage>
 							<org.osgi.framework.storage.clean>onFirstInit</org.osgi.framework.storage.clean>
 							<osgi.shell.telnet.port>${osgi.shell.telnet.port}</osgi.shell.telnet.port>
 							<gosh.args>--nointeractive --noshutdown</gosh.args>
 						</properties>
-						<deployables>
-							<deployable>
-								<groupId>org.apache.felix</groupId>
-								<artifactId>org.apache.felix.shell</artifactId>
-							</deployable>
-							<deployable>
-								<groupId>org.apache.felix</groupId>
-								<artifactId>org.apache.felix.shell.remote</artifactId>
-							</deployable>
-							<deployable>
-								<groupId>org.apache.felix</groupId>
-								<artifactId>org.apache.felix.gogo.runtime</artifactId>
-							</deployable>
-							<deployable>
-								<groupId>org.apache.felix</groupId>
-								<artifactId>org.apache.felix.gogo.shell</artifactId>
-							</deployable>
-						</deployables>
 					</configuration>
-					<deployer>
-						<deployables>
-							<deployable />
-							<deployable>
-								<classifier>tests</classifier>
-							</deployable>
-						</deployables>
-					</deployer>
+					<deployables>
+						<deployable>
+							<groupId>org.apache.felix</groupId>
+							<artifactId>org.apache.felix.shell</artifactId>
+						</deployable>
+						<deployable>
+							<groupId>org.apache.felix</groupId>
+							<artifactId>org.apache.felix.shell.remote</artifactId>
+						</deployable>
+						<deployable>
+							<groupId>org.apache.felix</groupId>
+							<artifactId>org.apache.felix.gogo.runtime</artifactId>
+						</deployable>
+						<deployable>
+							<groupId>org.apache.felix</groupId>
+							<artifactId>org.apache.felix.gogo.shell</artifactId>
+						</deployable>
+						<deployable />
+						<deployable>
+							<classifier>tests</classifier>
+						</deployable>
+					</deployables>
 				</configuration>
 				<dependencies>
 					<dependency>
-						<groupId>org.codehaus.cargo</groupId>
-						<artifactId>cargo-container-osgi</artifactId>
-						<version>1.2.2-SNAPSHOT</version>
+						<groupId>@project.groupId@</groupId>
+						<artifactId>@project.artifactId@</artifactId>
+						<version>@project.version@</version>
 					</dependency>
 				</dependencies>
 			</plugin>
@@ -313,7 +308,7 @@
 		<dependency>
 			<groupId>org.apache.felix</groupId>
 			<artifactId>org.apache.felix.framework</artifactId>
-			<version>4.0.2</version>
+			<version>4.0.3</version>
 			<type>bundle</type>
 			<scope>test</scope>
 		</dependency>
