@@ -316,6 +316,11 @@ public class ForkedBooterAspect
             }
             ChannelFuture closeFuture = channel.getCloseFuture();
             closeFuture.await();
+            Throwable cause = closeFuture.getCause();
+            if (cause != null)
+            {
+                throw cause;
+            }
         }
         finally
         {
