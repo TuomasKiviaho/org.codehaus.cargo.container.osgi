@@ -271,7 +271,7 @@ public class Booter
         {
             t.printStackTrace( err );
             err.flush();
-            throw e;
+            throw t;
         }
     }
 
