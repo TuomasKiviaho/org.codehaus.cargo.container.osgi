@@ -4,9 +4,10 @@
 	<parent>
 		<groupId>org.codehaus.cargo</groupId>
 		<artifactId>cargo-core</artifactId>
-		<version>1.2.4-SNAPSHOT</version>
+		<version>1.2.4</version>
 	</parent>
 	<artifactId>cargo-container-osgi</artifactId>
+	<version>1.2.4-SNAPSHOT</version>
 	<name>Cargo OSGi Container</name>
 	<description>Core API implementation for OSGi Service Platform Release 4 Version 4.2</description>
 	<build>
@@ -55,7 +56,7 @@
 						<configuration>
 							<artifacts>
 								<artifact>
-									<file>${project.build.directory}/it/surefire/target/surefire-osgi-2.12-shaded.jar</file>
+									<file>${project.build.directory}/it/surefire/target/surefire-osgi-2.13-SNAPSHOT-shaded.jar</file>
 									<classifier>surefire</classifier>
 								</artifact>
 							</artifacts>

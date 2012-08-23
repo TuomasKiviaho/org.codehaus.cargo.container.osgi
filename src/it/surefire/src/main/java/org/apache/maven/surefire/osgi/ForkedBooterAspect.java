@@ -193,10 +193,11 @@ public class ForkedBooterAspect
 
         private volatile String message;
 
-        public TelnetHandler(PrintStream printStream)
+        public TelnetHandler(ReporterConfiguration reporterConfiguration)
         {
-            this.printStream = printStream;
-            this.consoleLogger = new ForkingRunListener(System.out, 0);
+            this.printStream = reporterConfiguration.getOriginalSystemOut();
+            boolean trimStackTraces = reporterConfiguration.isTrimStackTrace();
+            this.consoleLogger = new ForkingRunListener(System.out, 0, trimStackTraces);
         }
 
         @Override
@@ -258,18 +259,18 @@ public class ForkedBooterAspect
             surefirePropertiesFile.exists() ? new FileInputStream(surefirePropertiesFile) : null;
         BooterDeserializer booterDeserializer = new BooterDeserializer(inputStream);
         ProviderConfiguration providerConfiguration = booterDeserializer.deserialize();
+
         Properties providerProperties = providerConfiguration.getProviderProperties();
         String hostname = providerProperties.getProperty(HOSTNAME, "127.0.0.1");
-        String property = providerProperties.getProperty(PORT, "6666");
-        int port = Integer.parseInt(property);
+        String port = providerProperties.getProperty(PORT, "6666");
         SocketAddress socketAddress =
-            hostname == null ? new InetSocketAddress(port)
-                : new InetSocketAddress(hostname, port);
+            hostname == null ? new InetSocketAddress(Integer.parseInt(port))
+                : new InetSocketAddress(hostname, Integer.parseInt(port));
         ReporterConfiguration reporterConfiguration =
             providerConfiguration.getReporterConfiguration();
-        PrintStream originalSystemOut = reporterConfiguration.getOriginalSystemOut();
         Executor executor = Executors.newCachedThreadPool();
         ChannelFactory channelFactory = new OioClientSocketChannelFactory(executor);
+        Throwable cause;
         ClientBootstrap clientBootstrap = new ClientBootstrap(channelFactory);
         try
         {
@@ -277,7 +278,7 @@ public class ForkedBooterAspect
             ChannelUpstreamHandler stringDecoder = new TelnetDecoder(CHARSET);
             ChannelUpstreamHandler delimiterBasedFrameDecoder =
                 new DelimiterBasedFrameDecoder(Integer.MAX_VALUE, Delimiters.lineDelimiter());
-            ChannelHandler telnetHandler = new TelnetHandler(originalSystemOut);
+            ChannelHandler telnetHandler = new TelnetHandler(reporterConfiguration);
             ChannelPipeline channelPipeLine = new DefaultChannelPipeline();
             for (ChannelHandler channelHandler : Arrays.asList(delimiterBasedFrameDecoder,
                 stringDecoder, telnetHandler, stringEncoder))
@@ -316,16 +317,35 @@ public class ForkedBooterAspect
             }
             ChannelFuture closeFuture = channel.getCloseFuture();
             closeFuture.await();
-            Throwable cause = closeFuture.getCause();
-            if (cause != null)
-            {
-                throw cause;
-            }
+            cause = closeFuture.getCause();
         }
         finally
         {
             clientBootstrap.releaseExternalResources();
         }
-    }
+        if (cause != null)
+        {
+            cause.printStackTrace();
+            Thread lastExit = new Thread()
+            {
 
+                public void run()
+                {
+                    try
+                    {
+                        Thread.sleep(30000);
+                        Runtime runtime = Runtime.getRuntime();
+                        runtime.halt(1);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+
+            };
+            lastExit.setDaemon(true);
+            lastExit.start();
+        }
+    }
 }

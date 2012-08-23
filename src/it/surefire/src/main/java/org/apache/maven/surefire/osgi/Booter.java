@@ -21,11 +21,13 @@ import java.util.jar.Manifest;
 
 import org.apache.maven.surefire.booter.BooterDeserializer;
 import org.apache.maven.surefire.booter.ClasspathConfiguration;
-import org.apache.maven.surefire.booter.ForkedBooter;
 import org.apache.maven.surefire.booter.ProviderConfiguration;
+import org.apache.maven.surefire.booter.ProviderFactory;
 import org.apache.maven.surefire.booter.StartupConfiguration;
+import org.apache.maven.surefire.booter.SurefireReflector;
 import org.apache.maven.surefire.booter.SystemPropertyManager;
 import org.apache.maven.surefire.booter.TypeEncodedValue;
+import org.apache.maven.surefire.report.ReporterConfiguration;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -37,7 +39,6 @@ import org.osgi.framework.wiring.BundleWire;
 import org.osgi.framework.wiring.BundleWiring;
 
 public class Booter
-    extends ForkedBooter
 {
 
     private static class CurrentThreadOutputStream
@@ -242,6 +243,9 @@ public class Booter
                     }
                 }
             }
+            ReporterConfiguration reporterConfiguration = providerConfiguration.getReporterConfiguration();
+            Boolean trimStackTrace = reporterConfiguration.isTrimStackTrace();
+            PrintStream originalSystemOut = reporterConfiguration.getOriginalSystemOut();
             CurrentThreadOutputStream currentOutputStream = new CurrentThreadOutputStream( out );
             PrintStream outputStream = new PrintStream( currentOutputStream );
             PrintStream errorStream =
@@ -255,7 +259,11 @@ public class Booter
                     ClassLoader classLoader = bundleWiring.getClassLoader();
                     TypeEncodedValue forkedTestSet = providerConfiguration.getTestForFork();
                     Object testSet = forkedTestSet != null ? forkedTestSet.getDecodedValue( classLoader ) : null;
-                    runSuitesInProcess( testSet, classLoader, startupConfiguration, providerConfiguration );
+                    ClassLoader surefireClassLoader = classpathConfiguration.createSurefireClassLoader( classLoader );
+                    SurefireReflector surefireReflector = new SurefireReflector( surefireClassLoader );
+                    Object factory = surefireReflector.createForkingReporterFactory( trimStackTrace, originalSystemOut );
+                    ProviderFactory.invokeProvider( testSet, classLoader, surefireClassLoader, factory,
+                                                    providerConfiguration, true, startupConfiguration, false );
                 }
             }
             finally
@@ -264,7 +272,7 @@ public class Booter
                 System.setOut( out );
                 System.setErr( err );
             }
-            out.println( "Z,0,BYE!" );
+            out.println( "Z,0," );
             out.flush();
         }
         catch ( Throwable t )
