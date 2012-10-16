@@ -2,6 +2,8 @@ package org.codehaus.cargo.container.osgi;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.Collections;
 
 import org.codehaus.cargo.container.LocalContainer;
 import org.codehaus.cargo.container.configuration.ConfigurationCapability;
@@ -10,6 +12,7 @@ import org.codehaus.cargo.container.spi.configuration.AbstractLocalConfiguration
 import org.codehaus.cargo.util.CargoException;
 import org.codehaus.cargo.util.log.LogLevel;
 import org.codehaus.cargo.util.log.Logger;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
@@ -48,6 +51,15 @@ public class OsgiLocalConfiguration extends AbstractLocalConfiguration
                 || (LogLevel.DEBUG.equals(logLevel) && level <= LogService.LOG_DEBUG))
             {
                 String message = entry.getMessage();
+                ServiceReference< ? > serviceReference = entry.getServiceReference();
+                if (serviceReference != null)
+                {
+                    String[] objectClass =
+                        (String[]) serviceReference.getProperty(Constants.OBJECTCLASS);
+                    message =
+                        (objectClass == null ? Collections.emptyList() : Arrays
+                            .asList(objectClass)).toString() + ' ' + message;
+                }
                 Throwable exception = entry.getException();
                 if (exception != null)
                 {
@@ -57,17 +69,9 @@ public class OsgiLocalConfiguration extends AbstractLocalConfiguration
                     exception.printStackTrace(printWriter);
                     message = stringWriter.toString();
                 }
-                String category = ""; // FIXME fix cargo to accept logs without category
-                ServiceReference< ? > serviceReference = entry.getServiceReference();
-                if (serviceReference != null)
-                {
-                    String[] objectClass =
-                        (String[]) serviceReference.getProperty(Constants.OBJECTCLASS);
-                    if (objectClass != null)
-                    {
-                        category = objectClass[0];
-                    }
-                }
+                Bundle bundle = entry.getBundle();
+                String symbolicName = bundle.getSymbolicName();
+                String category = symbolicName == null ? "" : symbolicName;
                 switch (level)
                 {
                     case LogService.LOG_WARNING:
@@ -109,36 +113,40 @@ public class OsgiLocalConfiguration extends AbstractLocalConfiguration
         OsgiEmbeddedLocalContainer embeddedLocalContainer =
             (OsgiEmbeddedLocalContainer) container;
         Framework framework = embeddedLocalContainer.getBundle();
-        framework.init();
         BundleContext bundleContext = framework.getBundleContext();
-        final LogListener logListener = new LogListenerImpl();
-        ServiceTracker< ? , ? > serviceTracker =
-            new ServiceTracker<Object, Object>(bundleContext, LogReaderService.class.getName(),
-                null)
-            {
-
-                @Override
-                public Object addingService(ServiceReference<Object> serviceReference)
+        if (bundleContext == null)
+        {
+            framework.init();
+            bundleContext = framework.getBundleContext();
+            final LogListener logListener = new LogListenerImpl();
+            ServiceTracker< ? , ? > serviceTracker =
+                new ServiceTracker<Object, Object>(bundleContext,
+                    LogReaderService.class.getName(), null)
                 {
-                    Object service = super.addingService(serviceReference);
-                    LogReaderService logReaderService =
-                        Proxy.newInstance(LogReaderService.class, service);
-                    logReaderService.addLogListener(logListener);
-                    return service;
-                }
 
-                @Override
-                public void removedService(ServiceReference<Object> serviceReference,
-                    Object service)
-                {
-                    LogReaderService logReaderService =
-                        Proxy.newInstance(LogReaderService.class, service);
-                    logReaderService.removeLogListener(logListener);
-                    super.removedService(serviceReference, service);
-                }
+                    @Override
+                    public Object addingService(ServiceReference<Object> serviceReference)
+                    {
+                        Object service = super.addingService(serviceReference);
+                        LogReaderService logReaderService =
+                            Proxy.newInstance(LogReaderService.class, service);
+                        logReaderService.addLogListener(logListener);
+                        return service;
+                    }
 
-            };
-        serviceTracker.open();
+                    @Override
+                    public void removedService(ServiceReference<Object> serviceReference,
+                        Object service)
+                    {
+                        LogReaderService logReaderService =
+                            Proxy.newInstance(LogReaderService.class, service);
+                        logReaderService.removeLogListener(logListener);
+                        super.removedService(serviceReference, service);
+                    }
+
+                };
+            serviceTracker.open();
+        }
     }
 
 }

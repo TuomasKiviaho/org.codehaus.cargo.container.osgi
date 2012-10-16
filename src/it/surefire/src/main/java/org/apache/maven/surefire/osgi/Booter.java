@@ -2,18 +2,14 @@ package org.apache.maven.surefire.osgi;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -41,105 +37,87 @@ import org.osgi.framework.wiring.BundleWiring;
 public class Booter
 {
 
-    private static class CurrentThreadOutputStream
-        extends FilterOutputStream
+    private static class PrintStreamImpl extends PrintStream
     {
 
-        private InheritableThreadLocal<Boolean> currentThread;
+        private ThreadLocal<byte[]> buffers;
 
-        private Queue<Object> buffers;
-
-        public CurrentThreadOutputStream( OutputStream out )
+        public PrintStreamImpl(PrintStream out)
         {
-            super( out );
-            this.currentThread = new InheritableThreadLocal<Boolean>();
-            this.currentThread.set( Boolean.TRUE );
-            this.buffers = new LinkedList<Object>();
+            super(out, true);
+            this.buffers = new ThreadLocal<byte[]>();
         }
 
-        public void flush()
-            throws IOException
+        @Override
+        public synchronized void write(int b)
         {
-            this.flushBuffers();
-            this.flush();
-        }
-
-        public void flushBuffers()
-            throws IOException
-        {
-            if ( !this.buffers.isEmpty() )
+            byte[] buffer = this.buffers.get();
+            if (buffer == null)
             {
-                for ( Object buffer : this.buffers )
+                buffer = new byte[] {(byte) b};
+                this.buffers.set(buffer);
+                try
                 {
-                    if ( buffer instanceof Integer )
-                    {
-                        int b = (Integer) buffer;
-                        this.out.write( b );
-                    }
-                    else if ( buffer instanceof byte[] )
-                    {
-                        byte[] bytes = (byte[]) buffer;
-                        this.out.write( bytes );
-                    }
-                    else
-                    {
-                        Object[] array = (Object[]) buffer;
-                        byte[] bytes = (byte[]) array[0];
-                        int offset = (Integer) array[1];
-                        int length = (Integer) array[2];
-                        this.out.write( bytes, offset, length );
-                    }
+                    super.write(b);
                 }
-                this.buffers.clear();
+                finally
+                {
+                    this.buffers.remove();
+                }
+            }
+            else
+            {
+                super.write(buffer, 0, buffer.length);
             }
         }
 
         @Override
-        public synchronized void write( int b )
-            throws IOException
+        public synchronized void write(byte[] bytes) throws IOException
         {
-            if ( this.currentThread.get() == null )
+            byte[] buffer = this.buffers.get();
+            if (buffer == null)
             {
-                this.buffers.add( Integer.valueOf( b ) );
+                this.buffers.set(bytes);
+                try
+                {
+                    super.write(bytes);
+                }
+                finally
+                {
+                    this.buffers.remove();
+                }
             }
             else
             {
-                this.flushBuffers();
-                this.out.write( b );
+                super.write(buffer);
             }
         }
 
         @Override
-        public synchronized void write( byte[] bytes )
-            throws IOException
+        public synchronized void write(byte[] bytes, int offset, int length)
         {
-            if ( this.currentThread.get() == null )
+            byte[] buffer = this.buffers.get();
+            if (buffer == null)
             {
-                this.buffers.add( bytes );
+                buffer = bytes;
+                if (offset != 0 || length != bytes.length)
+                {
+                    buffer = new byte[length];
+                    System.arraycopy(bytes, offset, buffer, 0, length);
+                }
+                this.buffers.set(buffer);
+                try
+                {
+                    super.write(bytes, offset, length);
+                }
+                finally
+                {
+                    this.buffers.remove();
+                }
             }
             else
             {
-                this.flushBuffers();
-                this.out.write( bytes );
-            }
-        }
-
-        @Override
-        public synchronized void write( byte[] bytes, int offset, int length )
-            throws IOException
-        {
-            if ( this.currentThread.get() == null )
-            {
-                Object[] buffer = new Object[3];
-                buffer[0] = bytes;
-                buffer[1] = offset;
-                buffer[2] = length;
-                this.buffers.add( buffer );
-            }
-            else
-            {
-                this.flushBuffers();
-                this.out.write( bytes, offset, length );
+                super.write(buffer, 0, buffer.length);
             }
         }
 
@@ -150,89 +128,95 @@ public class Booter
         super();
     }
 
-    public static synchronized void _main( String[] args )
-        throws Throwable
+    public static synchronized void _main(String[] args) throws Throwable
     {
-        PrintStream out = System.out;
-        out.print( Booter.class.getPackage().getName() );
-        out.print( ':' );
-        out.print( Booter.class.getSimpleName() );
-        for ( int i = 1; i < args.length; i++ )
+        System.out.print(Booter.class.getPackage().getName());
+        System.out.print(':');
+        System.out.print(Booter.class.getSimpleName());
+        for (int i = 1; i < args.length; i++)
         {
-            System.out.print( ' ' );
-            out.print( '\'' );
-            out.print( args[i].replace( "'", "'\\''" ) );
-            out.print( '\'' );
+            System.out.print(' ');
+            System.out.print('\'');
+            System.out.print(args[i].replace("'", "'\\''"));
+            System.out.print('\'');
         }
-        out.println();
-        PrintStream err = System.err;
+        System.out.println();
         try
         {
-            if ( args.length > 2 )
+            if (args.length > 2)
             {
-                SystemPropertyManager.setSystemProperties( new File( args[2] ) );
+                SystemPropertyManager.setSystemProperties(new File(args[2]));
             }
-            File surefirePropertiesFile = new File( args[1] );
-            InputStream stream = surefirePropertiesFile.exists() ? new FileInputStream( surefirePropertiesFile ) : null;
-            BooterDeserializer booterDeserializer = new BooterDeserializer( stream );
+            File surefirePropertiesFile = new File(args[1]);
+            InputStream stream =
+                surefirePropertiesFile.exists() ? new FileInputStream(surefirePropertiesFile)
+                    : null;
+            BooterDeserializer booterDeserializer = new BooterDeserializer(stream);
             ProviderConfiguration providerConfiguration = booterDeserializer.deserialize();
-            StartupConfiguration startupConfiguration = booterDeserializer.getProviderConfiguration();
-            ClasspathConfiguration classpathConfiguration = startupConfiguration.getClasspathConfiguration();
+            StartupConfiguration startupConfiguration =
+                booterDeserializer.getProviderConfiguration();
+            ClasspathConfiguration classpathConfiguration =
+                startupConfiguration.getClasspathConfiguration();
             ClassLoader testClassLoader = classpathConfiguration.createTestClassLoader();
             Set<BundleWiring> bundleWirings = Collections.emptySet();
             {
                 String symbolicName;
                 Version version;
-                URL resource = testClassLoader.getResource( JarFile.MANIFEST_NAME );
+                URL resource = testClassLoader.getResource(JarFile.MANIFEST_NAME);
                 InputStream inputStream = resource.openStream();
                 try
                 {
-                    Manifest manifest = new Manifest( inputStream );
+                    Manifest manifest = new Manifest(inputStream);
                     Attributes mainAttributes = manifest.getMainAttributes();
-                    symbolicName = mainAttributes.getValue( Constants.BUNDLE_SYMBOLICNAME );
-                    String bundleVersion = mainAttributes.getValue( Constants.BUNDLE_VERSION );
-                    version = new Version( bundleVersion );
+                    symbolicName = mainAttributes.getValue(Constants.BUNDLE_SYMBOLICNAME);
+                    String bundleVersion = mainAttributes.getValue(Constants.BUNDLE_VERSION);
+                    version = new Version(bundleVersion);
                 }
                 finally
                 {
                     inputStream.close();
                 }
-                Bundle bundle = FrameworkUtil.getBundle( Booter.class );
+                Bundle bundle = FrameworkUtil.getBundle(Booter.class);
                 BundleContext bundleContext = bundle.getBundleContext();
                 Bundle[] candidateBundles = bundleContext.getBundles();
-                for ( Bundle candidateBundle : candidateBundles )
+                for (Bundle candidateBundle : candidateBundles)
                 {
                     String bundleSymbolicName = candidateBundle.getSymbolicName();
                     Version bundleVersion = candidateBundle.getVersion();
-                    if ( symbolicName.equals( bundleSymbolicName ) && version.equals( bundleVersion ) )
+                    if (symbolicName.equals(bundleSymbolicName) && version.equals(bundleVersion))
                     {
                         Dictionary<String, String> headers = candidateBundle.getHeaders();
-                        String fragmentHost = headers.get( Constants.FRAGMENT_HOST );
-                        if ( fragmentHost == null )
+                        String fragmentHost = headers.get(Constants.FRAGMENT_HOST);
+                        if (fragmentHost == null)
                         {
-                            BundleWiring bundleWiring = candidateBundle.adapt( BundleWiring.class );
-                            bundleWirings = Collections.singleton( bundleWiring );
+                            BundleWiring bundleWiring = candidateBundle.adapt(BundleWiring.class);
+                            bundleWirings = Collections.singleton(bundleWiring);
                         }
                         else
                         {
-                            BundleRevisions bundleRevisions = candidateBundle.adapt( BundleRevisions.class );
-                            if ( bundleRevisions != null )
+                            BundleRevisions bundleRevisions =
+                                candidateBundle.adapt(BundleRevisions.class);
+                            if (bundleRevisions != null)
                             {
-                                List<BundleRevision> candidateBundleRevisions = bundleRevisions.getRevisions();
-                                bundleWirings = new HashSet<BundleWiring>( candidateBundleRevisions.size() );
-                                for ( BundleRevision candidateBundleRevision : candidateBundleRevisions )
+                                List<BundleRevision> candidateBundleRevisions =
+                                    bundleRevisions.getRevisions();
+                                bundleWirings =
+                                    new HashSet<BundleWiring>(candidateBundleRevisions.size());
+                                for (BundleRevision candidateBundleRevision : candidateBundleRevisions)
                                 {
-                                    BundleWiring candidateBundleWiring = candidateBundleRevision.getWiring();
-                                    if ( candidateBundleWiring != null )
+                                    BundleWiring candidateBundleWiring =
+                                        candidateBundleRevision.getWiring();
+                                    if (candidateBundleWiring != null)
                                     {
                                         List<BundleWire> candidateBundleWires =
-                                            candidateBundleWiring.getRequiredWires( null );
-                                        if ( candidateBundleWires != null )
+                                            candidateBundleWiring.getRequiredWires(null);
+                                        if (candidateBundleWires != null)
                                         {
-                                            for ( BundleWire candidateBundleWire : candidateBundleWires )
+                                            for (BundleWire candidateBundleWire : candidateBundleWires)
                                             {
-                                                BundleWiring bundleWiring = candidateBundleWire.getProviderWiring();
-                                                bundleWirings.add( bundleWiring );
+                                                BundleWiring bundleWiring =
+                                                    candidateBundleWire.getProviderWiring();
+                                                bundleWirings.add(bundleWiring);
                                             }
                                         }
                                     }
@@ -243,44 +227,43 @@ public class Booter
                     }
                 }
             }
-            ReporterConfiguration reporterConfiguration = providerConfiguration.getReporterConfiguration();
+            ReporterConfiguration reporterConfiguration =
+                providerConfiguration.getReporterConfiguration();
             Boolean trimStackTrace = reporterConfiguration.isTrimStackTrace();
             PrintStream originalSystemOut = reporterConfiguration.getOriginalSystemOut();
-            CurrentThreadOutputStream currentOutputStream = new CurrentThreadOutputStream( out );
-            PrintStream outputStream = new PrintStream( currentOutputStream );
-            PrintStream errorStream =
-                out.equals( err ) ? outputStream : new PrintStream( new CurrentThreadOutputStream( err ) );
-            System.setOut( outputStream );
-            System.setErr( errorStream );
-            try
+            PrintStream outputStream = new PrintStreamImpl(originalSystemOut);
+            for (BundleWiring bundleWiring : bundleWirings)
             {
-                for ( BundleWiring bundleWiring : bundleWirings )
+                ClassLoader classLoader = bundleWiring.getClassLoader();
+                TypeEncodedValue forkedTestSet = providerConfiguration.getTestForFork();
+                Object testSet =
+                    forkedTestSet != null ? forkedTestSet.getDecodedValue(classLoader) : null;
+                ClassLoader surefireClassLoader =
+                    classpathConfiguration.createSurefireClassLoader(classLoader);
+                SurefireReflector surefireReflector = new SurefireReflector(surefireClassLoader);
+                Object factory =
+                    surefireReflector.createForkingReporterFactory(trimStackTrace, outputStream);
+                PrintStream out = System.out;
+                PrintStream err = System.err;
+                try
                 {
-                    ClassLoader classLoader = bundleWiring.getClassLoader();
-                    TypeEncodedValue forkedTestSet = providerConfiguration.getTestForFork();
-                    Object testSet = forkedTestSet != null ? forkedTestSet.getDecodedValue( classLoader ) : null;
-                    ClassLoader surefireClassLoader = classpathConfiguration.createSurefireClassLoader( classLoader );
-                    SurefireReflector surefireReflector = new SurefireReflector( surefireClassLoader );
-                    Object factory = surefireReflector.createForkingReporterFactory( trimStackTrace, originalSystemOut );
-                    ProviderFactory.invokeProvider( testSet, classLoader, surefireClassLoader, factory,
-                                                    providerConfiguration, true, startupConfiguration, false );
+                    ProviderFactory.invokeProvider(testSet, classLoader, surefireClassLoader,
+                        factory, providerConfiguration, true, startupConfiguration, false);
+                }
+                finally
+                {
+                    System.setOut(out);
+                    System.setErr(err);
                 }
             }
-            finally
-            {
-                currentOutputStream.flushBuffers();
-                System.setOut( out );
-                System.setErr( err );
-            }
-            out.println( "Z,0," );
-            out.flush();
         }
-        catch ( Throwable t )
+        catch (Throwable t)
         {
-            t.printStackTrace( err );
-            err.flush();
-            throw t;
+            t.printStackTrace(System.err);
+            System.err.flush();
         }
+        System.out.println("Z,0,");
+        System.out.flush();
     }
 
 }

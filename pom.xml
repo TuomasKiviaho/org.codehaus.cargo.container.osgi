@@ -23,13 +23,11 @@
 						</goals>
 						<configuration>
 							<goals>
-								<goal>verify</goal>
+								<goal>clean verify</goal>
 							</goals>
 							<localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
 							<settingsFile>src/it/settings.xml</settingsFile>
 							<cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-							<ignoreFailures>true</ignoreFailures>
-							<debug>true</debug>
 						</configuration>
 					</execution>
 				</executions>
@@ -56,7 +54,7 @@
 						<configuration>
 							<artifacts>
 								<artifact>
-									<file>${project.build.directory}/it/surefire/target/surefire-osgi-2.13-SNAPSHOT-shaded.jar</file>
+									<file>${project.build.directory}/it/surefire/target/surefire-osgi-${org.apache.maven.surefire}-shaded.jar</file>
 									<classifier>surefire</classifier>
 								</artifact>
 							</artifacts>
@@ -127,5 +125,6 @@
 	</dependencies>
 	<properties>
 		<checkstyle.skip>true</checkstyle.skip>
+		<org.apache.maven.surefire>2.12.3</org.apache.maven.surefire>
 	</properties>
 </project>

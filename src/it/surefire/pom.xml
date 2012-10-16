@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.apache.maven.surefire</groupId>
 		<artifactId>surefire-providers</artifactId>
-		<version>2.13-SNAPSHOT</version>
+		<version>@org.apache.maven.surefire@</version>
 	</parent>
 	<artifactId>surefire-osgi</artifactId>
 	<packaging>bundle</packaging>
@@ -240,7 +240,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>2.12</version>
+				<version>${project.version}</version>
 				<executions>
 					<execution>
 						<goals>
