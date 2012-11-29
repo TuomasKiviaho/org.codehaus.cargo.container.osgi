@@ -7,7 +7,7 @@
 		<version>1.2.4</version>
 	</parent>
 	<artifactId>cargo-container-osgi</artifactId>
-	<version>1.2.4-SNAPSHOT</version>
+	<version>1.2.4</version>
 	<name>Cargo OSGi Container</name>
 	<description>Core API implementation for OSGi Service Platform Release 4 Version 4.2</description>
 	<build>
@@ -85,12 +85,12 @@
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.core</artifactId>
-			<version>5.0.0</version>
+			<version>4.3.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.compendium</artifactId>
-			<version>4.3.0</version>
+			<version>4.3.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.cargo</groupId>
