@@ -44,7 +44,7 @@ import org.jboss.netty.handler.codec.frame.Delimiters;
 import org.jboss.netty.handler.codec.string.StringDecoder;
 import org.jboss.netty.handler.codec.string.StringEncoder;
 
-@Aspect( )
+@Aspect()
 public class ForkedBooterAspect
 {
 
@@ -52,14 +52,12 @@ public class ForkedBooterAspect
 
     public static final String HOSTNAME = "org.apache.maven.surefire.osgi.hostname";
 
-    private static Charset CHARSET = Charset.forName( "UTF-8" );
+    private static Charset CHARSET = Charset.forName("UTF-8");
 
-    private static class TelnetEncoder
-        extends StringEncoder
+    private static class TelnetEncoder extends StringEncoder
     {
 
-        private static class ChannelBufferIndexFinderImpl
-            implements ChannelBufferIndexFinder
+        private static class ChannelBufferIndexFinderImpl implements ChannelBufferIndexFinder
         {
 
             public ChannelBufferIndexFinderImpl()
@@ -67,9 +65,9 @@ public class ForkedBooterAspect
                 super();
             }
 
-            public boolean find( ChannelBuffer channelBuffer, int index )
+            public boolean find(ChannelBuffer channelBuffer, int index)
             {
-                byte character = channelBuffer.getByte( index );
+                byte character = channelBuffer.getByte(index);
                 return character < 32 || character == '^' || character == 255;
             }
 
@@ -77,35 +75,37 @@ public class ForkedBooterAspect
 
         private ChannelBufferIndexFinder channelBufferIndexFinder;
 
-        public TelnetEncoder( Charset charset )
+        public TelnetEncoder(Charset charset)
         {
-            super( charset );
+            super(charset);
             this.channelBufferIndexFinder = new ChannelBufferIndexFinderImpl();
         }
 
         @Override
-        protected Object encode( ChannelHandlerContext channelHandlerContext, Channel channel, Object message )
-            throws Exception
+        protected Object encode(ChannelHandlerContext channelHandlerContext, Channel channel,
+            Object message) throws Exception
         {
             Object encodedMessage = message;
-            if ( message instanceof String )
+            if (message instanceof String)
             {
-                ChannelBuffer channelBuffer = (ChannelBuffer) super.encode( channelHandlerContext, channel, message );
-                for ( int readableBytes = channelBuffer.readableBytes(), index =
-                    channelBuffer.indexOf( 0, readableBytes, this.channelBufferIndexFinder ); !( index < 0 ); index =
-                    channelBuffer.indexOf( index, ++readableBytes, this.channelBufferIndexFinder ) )
+                ChannelBuffer channelBuffer =
+                    (ChannelBuffer) super.encode(channelHandlerContext, channel, message);
+                for (int readableBytes = channelBuffer.readableBytes(), index =
+                    channelBuffer.indexOf(0, readableBytes, this.channelBufferIndexFinder); !(index < 0); index =
+                    channelBuffer.indexOf(index, ++readableBytes, this.channelBufferIndexFinder))
                 {
-                    ChannelBuffer prefix = channelBuffer.copy( 0, index );
-                    byte character = channelBuffer.getByte( index );
+                    ChannelBuffer prefix = channelBuffer.copy(0, index);
+                    byte character = channelBuffer.getByte(index);
                     byte[] bytes =
-                        character == 255 ? new byte[] { character, character } : new byte[] { '^',
-                            (byte) ( character + '@' ) };
+                        character == 255 ? new byte[] {character, character} : new byte[] {'^',
+                        (byte) (character + '@')};
                     index += bytes.length;
                     ChannelBuffer postfix =
-                        index < readableBytes ? channelBuffer.copy( index, readableBytes )
-                                        : ChannelBuffers.EMPTY_BUFFER;
+                        index < readableBytes ? channelBuffer.copy(index, readableBytes)
+                            : ChannelBuffers.EMPTY_BUFFER;
                     channelBuffer =
-                        ChannelBuffers.wrappedBuffer( prefix, ChannelBuffers.wrappedBuffer( bytes ), postfix );
+                        ChannelBuffers.wrappedBuffer(prefix, ChannelBuffers.wrappedBuffer(bytes),
+                            postfix);
                 }
                 encodedMessage = channelBuffer;
             }
@@ -114,12 +114,10 @@ public class ForkedBooterAspect
 
     }
 
-    private static class TelnetDecoder
-        extends StringDecoder
+    private static class TelnetDecoder extends StringDecoder
     {
 
-        private static class ChannelBufferIndexFinderImpl
-            implements ChannelBufferIndexFinder
+        private static class ChannelBufferIndexFinderImpl implements ChannelBufferIndexFinder
         {
 
             public ChannelBufferIndexFinderImpl()
@@ -127,9 +125,9 @@ public class ForkedBooterAspect
                 super();
             }
 
-            public boolean find( ChannelBuffer channelBuffer, int index )
+            public boolean find(ChannelBuffer channelBuffer, int index)
             {
-                byte character = channelBuffer.getByte( index );
+                byte character = channelBuffer.getByte(index);
                 return character == '^' || character == 255;
             }
 
@@ -137,55 +135,55 @@ public class ForkedBooterAspect
 
         private ChannelBufferIndexFinder channelBufferIndexFinder;
 
-        public TelnetDecoder( Charset charset )
+        public TelnetDecoder(Charset charset)
         {
-            super( charset );
+            super(charset);
             this.channelBufferIndexFinder = new ChannelBufferIndexFinderImpl();
         }
 
         @Override
-        protected Object decode( ChannelHandlerContext channelHandlerContext, Channel channel, Object message )
-            throws Exception
+        protected Object decode(ChannelHandlerContext channelHandlerContext, Channel channel,
+            Object message) throws Exception
         {
             Object decodedMessage = message;
-            if ( message instanceof ChannelBuffer )
+            if (message instanceof ChannelBuffer)
             {
                 ChannelBuffer channelBuffer = (ChannelBuffer) message;
-                for ( int readableBytes = channelBuffer.readableBytes(), index =
-                    channelBuffer.indexOf( 0, readableBytes, channelBufferIndexFinder ); !( index < 0 ); index =
-                    channelBuffer.indexOf( index, --readableBytes, channelBufferIndexFinder ) )
+                for (int readableBytes = channelBuffer.readableBytes(), index =
+                    channelBuffer.indexOf(0, readableBytes, channelBufferIndexFinder); !(index < 0); index =
+                    channelBuffer.indexOf(index, --readableBytes, channelBufferIndexFinder))
                 {
-                    ChannelBuffer prefix = channelBuffer.copy( 0, index );
-                    if ( index < readableBytes )
+                    ChannelBuffer prefix = channelBuffer.copy(0, index);
+                    if (index < readableBytes)
                     {
-                        byte character = channelBuffer.getByte( index + 1 );
-                        if ( character != 255 )
+                        byte character = channelBuffer.getByte(index + 1);
+                        if (character != 255)
                         {
                             character -= '@';
                         }
-                        byte[] bytes = new byte[] { character };
+                        byte[] bytes = new byte[] {character};
                         ChannelBuffer postfix =
-                            index + 1 < readableBytes ? channelBuffer.copy( index + 1, readableBytes )
-                                            : ChannelBuffers.EMPTY_BUFFER;
+                            index + 1 < readableBytes ? channelBuffer.copy(index + 1,
+                                readableBytes) : ChannelBuffers.EMPTY_BUFFER;
                         channelBuffer =
-                            ChannelBuffers.wrappedBuffer( prefix, ChannelBuffers.wrappedBuffer( bytes ), postfix );
+                            ChannelBuffers.wrappedBuffer(prefix,
+                                ChannelBuffers.wrappedBuffer(bytes), postfix);
                     }
                     else
                     {
                         channelBuffer = prefix;
                     }
                 }
-                decodedMessage = super.decode( channelHandlerContext, channel, channelBuffer );
+                decodedMessage = super.decode(channelHandlerContext, channel, channelBuffer);
             }
             return decodedMessage;
         }
     }
 
-    private static class TelnetHandler
-        extends SimpleChannelHandler
+    private static class TelnetHandler extends SimpleChannelHandler
     {
 
-        private static final String LINE_SEPARATOR = System.getProperty( "line.separator" );
+        private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
         private static final String BYE = "Z,0,";
 
@@ -195,56 +193,56 @@ public class ForkedBooterAspect
 
         private volatile String message;
 
-        public TelnetHandler( ReporterConfiguration reporterConfiguration )
+        public TelnetHandler(ReporterConfiguration reporterConfiguration)
         {
             this.printStream = reporterConfiguration.getOriginalSystemOut();
             boolean trimStackTraces = reporterConfiguration.isTrimStackTrace();
-            this.consoleLogger = new ForkingRunListener( this.printStream, 0, trimStackTraces );
+            this.consoleLogger = new ForkingRunListener(this.printStream, 0, trimStackTraces);
         }
 
         @Override
-        public void writeRequested( ChannelHandlerContext channelHandlerContext, MessageEvent messageEvent )
-            throws Exception
+        public void writeRequested(ChannelHandlerContext channelHandlerContext,
+            MessageEvent messageEvent) throws Exception
         {
             ChannelBuffer message = (ChannelBuffer) messageEvent.getMessage();
-            this.message = message.toString( CHARSET );
+            this.message = message.toString(CHARSET);
             ChannelBuffer lineDelimiter = Delimiters.lineDelimiter()[1];
-            message = ChannelBuffers.wrappedBuffer( message, lineDelimiter );
+            message = ChannelBuffers.wrappedBuffer(message, lineDelimiter);
             Channel channel = messageEvent.getChannel();
             ChannelFuture channelFuture = messageEvent.getFuture();
             SocketAddress remoteAddress = messageEvent.getRemoteAddress();
             MessageEvent downstreamMessageEvent =
-                new DownstreamMessageEvent( channel, channelFuture, message, remoteAddress );
-            super.writeRequested( channelHandlerContext, downstreamMessageEvent );
+                new DownstreamMessageEvent(channel, channelFuture, message, remoteAddress);
+            super.writeRequested(channelHandlerContext, downstreamMessageEvent);
         }
 
         @Override
-        public void exceptionCaught( ChannelHandlerContext channelHandlerContext, ExceptionEvent exceptionEvent )
-            throws Exception
+        public void exceptionCaught(ChannelHandlerContext channelHandlerContext,
+            ExceptionEvent exceptionEvent) throws Exception
         {
             Throwable cause = exceptionEvent.getCause();
-            cause.printStackTrace( this.printStream );
+            cause.printStackTrace(this.printStream);
         }
 
         @Override
-        public void messageReceived( ChannelHandlerContext channelHandlerContext, MessageEvent messageEvent )
-            throws Exception
+        public void messageReceived(ChannelHandlerContext channelHandlerContext,
+            MessageEvent messageEvent) throws Exception
         {
             String message = (String) messageEvent.getMessage();
-            if ( this.consoleLogger == null )
+            if (this.consoleLogger == null)
             {
-                this.printStream.println( message );
-                if ( message.startsWith( BYE ) )
+                this.printStream.println(message);
+                if (message.startsWith(BYE))
                 {
                     Channel channel = messageEvent.getChannel();
-                    byte[] bytes = new byte[] { 4 };
-                    channel.write( ChannelBuffers.wrappedBuffer( bytes ) );
+                    byte[] bytes = new byte[] {4};
+                    channel.write(ChannelBuffers.wrappedBuffer(bytes));
                 }
             }
             else
             {
-                this.consoleLogger.info( message + LINE_SEPARATOR );
-                if ( this.message != null && message.endsWith( this.message ) )
+                this.consoleLogger.info(message + LINE_SEPARATOR);
+                if (this.message != null && message.endsWith(this.message))
                 {
                     this.consoleLogger = null;
                 }
@@ -253,76 +251,78 @@ public class ForkedBooterAspect
 
     };
 
-    @Around( "execution(public static void org.apache.maven.surefire.booter.ForkedBooter.main(String[])) && args(args)" )
-    public void main( ProceedingJoinPoint proceedingJoinPoint, String[] args )
-        throws Throwable
+    @Around("execution(public static void org.apache.maven.surefire.booter.ForkedBooter.main(String[])) && args(args)")
+    public void main(ProceedingJoinPoint proceedingJoinPoint, String[] args) throws Throwable
     {
         boolean error = false;
         try
         {
-            File surefirePropertiesFile = new File( args[0] );
+            File surefirePropertiesFile = new File(args[0]);
             InputStream inputStream =
-                surefirePropertiesFile.exists() ? new FileInputStream( surefirePropertiesFile ) : null;
-            BooterDeserializer booterDeserializer = new BooterDeserializer( inputStream );
+                surefirePropertiesFile.exists() ? new FileInputStream(surefirePropertiesFile)
+                    : null;
+            BooterDeserializer booterDeserializer = new BooterDeserializer(inputStream);
             ProviderConfiguration providerConfiguration = booterDeserializer.deserialize();
 
             Properties providerProperties = providerConfiguration.getProviderProperties();
-            String hostname = providerProperties.getProperty( HOSTNAME, "127.0.0.1" );
-            String port = providerProperties.getProperty( PORT, "6666" );
+            String hostname = providerProperties.getProperty(HOSTNAME, "127.0.0.1");
+            String port = providerProperties.getProperty(PORT, "6666");
             SocketAddress socketAddress =
-                hostname == null ? new InetSocketAddress( Integer.parseInt( port ) )
-                                : new InetSocketAddress( hostname, Integer.parseInt( port ) );
-            ReporterConfiguration reporterConfiguration = providerConfiguration.getReporterConfiguration();
+                hostname == null ? new InetSocketAddress(Integer.parseInt(port))
+                    : new InetSocketAddress(hostname, Integer.parseInt(port));
+            ReporterConfiguration reporterConfiguration =
+                providerConfiguration.getReporterConfiguration();
             Executor executor = Executors.newCachedThreadPool();
-            ChannelFactory channelFactory = new OioClientSocketChannelFactory( executor );
-            ClientBootstrap clientBootstrap = new ClientBootstrap( channelFactory );
+            ChannelFactory channelFactory = new OioClientSocketChannelFactory(executor);
+            ClientBootstrap clientBootstrap = new ClientBootstrap(channelFactory);
             try
             {
-                ChannelDownstreamHandler stringEncoder = new TelnetEncoder( CHARSET );
-                ChannelUpstreamHandler stringDecoder = new TelnetDecoder( CHARSET );
+                ChannelDownstreamHandler stringEncoder = new TelnetEncoder(CHARSET);
+                ChannelUpstreamHandler stringDecoder = new TelnetDecoder(CHARSET);
                 ChannelUpstreamHandler delimiterBasedFrameDecoder =
-                    new DelimiterBasedFrameDecoder( Integer.MAX_VALUE, Delimiters.lineDelimiter() );
-                ChannelHandler telnetHandler = new TelnetHandler( reporterConfiguration );
+                    new DelimiterBasedFrameDecoder(Integer.MAX_VALUE, Delimiters.lineDelimiter());
+                ChannelHandler telnetHandler = new TelnetHandler(reporterConfiguration);
                 ChannelPipeline channelPipeLine = new DefaultChannelPipeline();
-                for ( ChannelHandler channelHandler : Arrays.asList( delimiterBasedFrameDecoder, stringDecoder,
-                                                                     telnetHandler, stringEncoder ) )
+                for (ChannelHandler channelHandler : Arrays.asList(delimiterBasedFrameDecoder,
+                    stringDecoder, telnetHandler, stringEncoder))
                 {
-                    Class<? extends ChannelHandler> chanelHandlerClass = channelHandler.getClass();
-                    String name = Introspector.decapitalize( chanelHandlerClass.getSimpleName() );
-                    channelPipeLine.addLast( name, channelHandler );
+                    Class< ? extends ChannelHandler> chanelHandlerClass =
+                        channelHandler.getClass();
+                    String name = Introspector.decapitalize(chanelHandlerClass.getSimpleName());
+                    channelPipeLine.addLast(name, channelHandler);
                 }
-                clientBootstrap.setPipeline( channelPipeLine );
-                ChannelFuture channelFuture = clientBootstrap.connect( socketAddress );
+                clientBootstrap.setPipeline(channelPipeLine);
+                ChannelFuture channelFuture = clientBootstrap.connect(socketAddress);
                 Channel channel = channelFuture.getChannel();
                 {
                     StringBuilder stringBuilder = new StringBuilder();
                     String scope = Booter.class.getPackage().getName();
-                    stringBuilder.append( scope );
-                    stringBuilder.append( ':' );
+                    stringBuilder.append(scope);
+                    stringBuilder.append(':');
                     String function = Booter.class.getSimpleName();
-                    stringBuilder.append( function );
-                    for ( String arg : args )
+                    stringBuilder.append(function);
+                    for (String arg : args)
                     {
-                        stringBuilder.append( ' ' );
-                        String[] tokens = arg.split( "\\'" );
-                        for ( int i = 0; i < tokens.length; i++ )
+                        stringBuilder.append(' ');
+                        String[] tokens = arg.split("\\'");
+                        for (int i = 0; i < tokens.length; i++)
                         {
-                            if ( i > 0 )
+                            if (i > 0)
                             {
-                                stringBuilder.append( "\\'" );
+                                stringBuilder.append("\\'");
                             }
-                            stringBuilder.append( '\'' );
-                            stringBuilder.append( tokens[i] );
-                            stringBuilder.append( '\'' );
+                            stringBuilder.append('\'');
+                            stringBuilder.append(tokens[i]);
+                            stringBuilder.append('\'');
                         }
                     }
                     String message = stringBuilder.toString();
-                    channel.write( message );
+                    channel.write(message);
                 }
                 ChannelFuture closeFuture = channel.getCloseFuture();
                 closeFuture.await();
                 Throwable cause = closeFuture.getCause();
-                if ( cause != null )
+                if (cause != null)
                 {
                     throw cause;
                 }
@@ -333,7 +333,7 @@ public class ForkedBooterAspect
             }
             error = false;
         }
-        catch ( Throwable t )
+        catch (Throwable t)
         {
             t.printStackTrace();
             error = true;
@@ -348,18 +348,18 @@ public class ForkedBooterAspect
                 {
                     try
                     {
-                        Thread.sleep( 30000 );
+                        Thread.sleep(30000);
                     }
-                    catch ( InterruptedException e )
+                    catch (InterruptedException e)
                     {
                         Thread.currentThread().interrupt();
                     }
                     Runtime runtime = Runtime.getRuntime();
-                    runtime.halt( status );
+                    runtime.halt(status);
                 }
 
             };
-            thread.setDaemon( true );
+            thread.setDaemon(true);
             thread.start();
         }
     }

@@ -158,6 +158,7 @@ public class Booter
             ClasspathConfiguration classpathConfiguration =
                 startupConfiguration.getClasspathConfiguration();
             ClassLoader testClassLoader = classpathConfiguration.createTestClassLoader();
+            Bundle bundle = FrameworkUtil.getBundle(Booter.class);
             Set<BundleWiring> bundleWirings = Collections.emptySet();
             {
                 String symbolicName;
@@ -176,7 +177,6 @@ public class Booter
                 {
                     inputStream.close();
                 }
-                Bundle bundle = FrameworkUtil.getBundle(Booter.class);
                 BundleContext bundleContext = bundle.getBundleContext();
                 Bundle[] candidateBundles = bundleContext.getBundles();
                 for (Bundle candidateBundle : candidateBundles)
