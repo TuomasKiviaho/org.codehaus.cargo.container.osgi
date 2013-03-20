@@ -8,7 +8,6 @@ import java.io.PrintStream;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Dictionary;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -29,8 +28,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.Version;
-import org.osgi.framework.wiring.BundleRevision;
-import org.osgi.framework.wiring.BundleRevisions;
 import org.osgi.framework.wiring.BundleWire;
 import org.osgi.framework.wiring.BundleWiring;
 
@@ -194,31 +191,19 @@ public class Booter
                         }
                         else
                         {
-                            BundleRevisions bundleRevisions =
-                                candidateBundle.adapt(BundleRevisions.class);
-                            if (bundleRevisions != null)
+                            BundleWiring candidateBundleWiring =
+                                candidateBundle.adapt(BundleWiring.class);
+                            if (candidateBundleWiring != null)
                             {
-                                List<BundleRevision> candidateBundleRevisions =
-                                    bundleRevisions.getRevisions();
-                                bundleWirings =
-                                    new HashSet<BundleWiring>(candidateBundleRevisions.size());
-                                for (BundleRevision candidateBundleRevision : candidateBundleRevisions)
+                                List<BundleWire> candidateBundleWires =
+                                    candidateBundleWiring.getRequiredWires(null);
+                                if (candidateBundleWires != null)
                                 {
-                                    BundleWiring candidateBundleWiring =
-                                        candidateBundleRevision.getWiring();
-                                    if (candidateBundleWiring != null)
+                                    for (BundleWire candidateBundleWire : candidateBundleWires)
                                     {
-                                        List<BundleWire> candidateBundleWires =
-                                            candidateBundleWiring.getRequiredWires(null);
-                                        if (candidateBundleWires != null)
-                                        {
-                                            for (BundleWire candidateBundleWire : candidateBundleWires)
-                                            {
-                                                BundleWiring bundleWiring =
-                                                    candidateBundleWire.getProviderWiring();
-                                                bundleWirings.add(bundleWiring);
-                                            }
-                                        }
+                                        BundleWiring bundleWiring =
+                                            candidateBundleWire.getProviderWiring();
+                                        bundleWirings.add(bundleWiring);
                                     }
                                 }
                             }
