@@ -1,7 +1,7 @@
 Embedded Cargo Container for OSGi Framework Launcher
 ====================================================
 
-OSGi Service Platform Release 4 Version 4.2 introduced a Framework Launcher that 
+OSGi Service Platform Release 4 Version 4.3 introduced a Framework Launcher that 
 allows OSGi framework to be started and stopped via common API which this implementation
 of Codehaus Cargo Embedded Container is build around.
 
@@ -32,18 +32,30 @@ full blown D-OSGi were considered but this approach was closest to the spirit of
 
 Usage:
 
-	<!-- osgi.shell.telnet.port can be obtainer using build-helper-maven-plugin -->
+	<plugin>
+		<groupId>org.codehaus.mojo</groupId>
+		<artifactId>build-helper-maven-plugin</artifactId>
+		<version>${build-helper-version}</version>
+		<executions>
+			<execution>
+				<phase>pre-integration-test</phase>
+				<goals>
+					<goal>reserve-network-port</goal>
+				</goals>
+				<configuration>
+					<portNames>
+						<portName>osgi.shell.telnet.port</portName>
+					</portNames>
+				</configuration>
+			</execution>
+		</executions>
+	</plugin>
+
 	<plugin>
 		<groupId>org.codehaus.cargo</groupId>
 		<artifactId>cargo-maven2-plugin</artifactId>
-		<version>1.2.4-SNAPSHOT</version>
+		<version>${cargo-version}</version>
 		<executions>
-			<execution>
-				<id>default-cli</id>
-				<goals>
-					<goal>run</goal>
-				</goals>
-			</execution>
 			<execution>
 				<id>pre-integration-test</id>
 				<phase>pre-integration-test</phase>
@@ -77,58 +89,80 @@ Usage:
 				</dependencies>
 			</container>
 			<configuration>
-				<type>standalone</type>
 				<properties>
 					<org.osgi.framework.storage>${project.build.directory}/felix-cache</org.osgi.framework.storage>
 					<org.osgi.framework.storage.clean>onFirstInit</org.osgi.framework.storage.clean>
 					<osgi.shell.telnet.port>${osgi.shell.telnet.port}</osgi.shell.telnet.port>
 				</properties>
-				<deployables>
-					<dependency>
-						<groupId>org.apache.felix</groupId>
-						<artifactId>org.apache.felix.shell</artifactId>
-						<type>bundle</type>
-					</dependency>
-					<dependency>
-						<groupId>org.apache.felix</groupId>
-						<artifactId>org.apache.felix.shell.remote</artifactId>
-						<type>bundle</type>
-					</dependency>
-					<deployable>
-						<groupId>org.apache.felix</groupId>
-						<artifactId>org.apache.felix.gogo.runtime</artifactId>
-						<type>bundle</type>
-					</deployable>
-					<deployable>
-						<groupId>org.apache.felix</groupId>
-						<artifactId>org.apache.felix.gogo.shell</artifactId>
-						<type>bundle</type>
-					</deployable>
-					<deployable>
-						<groupId>org.codehaus.cargo</groupId>
-						<artifactId>cargo-container-osgi</artifactId>
-						<type>bundle</type>
-					</deployable>
-					<deployable />
-					<deployable>
-						<classifier>tests</classifier> 
-					</deployable>
-				</deployables>
 			</configuration>
+			<deployables>
+				<dependency>
+					<groupId>org.apache.felix</groupId>
+					<artifactId>org.apache.felix.shell</artifactId>
+					<type>bundle</type>
+				</dependency>
+				<dependency>
+					<groupId>org.apache.felix</groupId>
+					<artifactId>org.apache.felix.shell.remote</artifactId>
+					<type>bundle</type>
+				</dependency>
+				<deployable>
+					<groupId>org.apache.felix</groupId>
+					<artifactId>org.apache.felix.gogo.runtime</artifactId>
+					<type>bundle</type>
+				</deployable>
+				<deployable>
+					<groupId>org.apache.felix</groupId>
+					<artifactId>org.apache.felix.gogo.shell</artifactId>
+					<type>bundle</type>
+				</deployable>
+				<deployable>
+					<groupId>org.codehaus.cargo</groupId>
+					<artifactId>cargo-container-osgi</artifactId>
+					<type>bundle</type>
+				</deployable>
+				<deployable />
+				<deployable>
+					<classifier>tests</classifier> 
+				</deployable>
+			</deployables>
 		</configuration>
 		<dependencies>
 			<dependency>
 				<groupId>org.codehaus.cargo</groupId>
 				<artifactId>cargo-container-osgi</artifactId>
-				<version>1.2.4-SNAPSHOT</version>
+				<version>${cargo-version}</version>
 			</dependency>
 		</dependencies>
 	</plugin>
 
-	<!-- aspectjweaver using maven-dependency-plugin -->
+	<plugin>
+		<artifactId>maven-dependency-plugin</artifactId>
+		<version>${dependency-version}</version>
+		<executions>
+			<execution>
+				<phase>pre-integration-test</phase>
+				<goals>
+					<goal>copy</goal>
+				</goals>
+				<configuration>
+					<stripVersion>true</stripVersion>
+					<outputDirectory>${project.build.directory}/javaagent</outputDirectory>
+					<artifactItems>
+						<artifactItem>
+							<groupId>org.aspectj</groupId>
+							<artifactId>aspectjweaver</artifactId>
+							<version>${aspectj-version}</version>
+						</artifactItem>
+					</artifactItems>
+				</configuration>
+			</execution>
+		</executions>
+	</plugin>
+			
 	<plugin>
 		<artifactId>maven-failsafe-plugin</artifactId>
-		<version>2.12</version>
+		<version>${failsafe-version}</version>
 		<executions>
 			<execution>
 				<goals>
@@ -136,11 +170,13 @@ Usage:
 					<goal>verify</goal>
 				</goals>
 				<configuration>
-					<systemPropertyVariables>
-						<osgi.shell.telnet.port>${osgi.shell.telnet.port}</osgi.shell.telnet.port>
-					</systemPropertyVariables>
+					properties>
+						<property>
+							<name>org.apache.maven.surefire.osgi.port</name>
+							<value>${osgi.shell.telnet.port}</value>
+						</property>
+					</properties>
 					<argLine>-javaagent:${project.build.directory}/javaagent/aspectjweaver.jar</argLine>
-					<failIfNoTests>true</failIfNoTests>
 				</configuration>
 			</execution>
 		</executions>
