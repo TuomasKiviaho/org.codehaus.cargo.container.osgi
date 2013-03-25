@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Dictionary;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -199,6 +200,7 @@ public class Booter
                                     candidateBundleWiring.getRequiredWires(null);
                                 if (candidateBundleWires != null)
                                 {
+                                    bundleWirings = new LinkedHashSet<BundleWiring>(candidateBundleWires.size());
                                     for (BundleWire candidateBundleWire : candidateBundleWires)
                                     {
                                         BundleWiring bundleWiring =
