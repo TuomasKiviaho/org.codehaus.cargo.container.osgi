@@ -169,7 +169,7 @@ public class Booter
                     Attributes mainAttributes = manifest.getMainAttributes();
                     symbolicName = mainAttributes.getValue(Constants.BUNDLE_SYMBOLICNAME);
                     String bundleVersion = mainAttributes.getValue(Constants.BUNDLE_VERSION);
-                    version = new Version(bundleVersion);
+                    version = bundleVersion == null ? null : new Version(bundleVersion);
                 }
                 finally
                 {
@@ -181,7 +181,9 @@ public class Booter
                 {
                     String bundleSymbolicName = candidateBundle.getSymbolicName();
                     Version bundleVersion = candidateBundle.getVersion();
-                    if (symbolicName.equals(bundleSymbolicName) && version.equals(bundleVersion))
+                    if (symbolicName.equals(bundleSymbolicName)
+                        && (version == bundleVersion || version != null
+                            && version.equals(bundleVersion)))
                     {
                         Dictionary<String, String> headers = candidateBundle.getHeaders();
                         String fragmentHost = headers.get(Constants.FRAGMENT_HOST);
@@ -200,7 +202,8 @@ public class Booter
                                     candidateBundleWiring.getRequiredWires(null);
                                 if (candidateBundleWires != null)
                                 {
-                                    bundleWirings = new LinkedHashSet<BundleWiring>(candidateBundleWires.size());
+                                    bundleWirings =
+                                        new LinkedHashSet<BundleWiring>(candidateBundleWires.size());
                                     for (BundleWire candidateBundleWire : candidateBundleWires)
                                     {
                                         BundleWiring bundleWiring =
