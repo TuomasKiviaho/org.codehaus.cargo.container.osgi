@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -159,61 +160,80 @@ public class Booter
             Bundle bundle = FrameworkUtil.getBundle(Booter.class);
             Set<BundleWiring> bundleWirings = Collections.emptySet();
             {
-                String symbolicName;
-                Version version;
-                URL resource = testClassLoader.getResource(JarFile.MANIFEST_NAME);
-                InputStream inputStream = resource.openStream();
-                try
+                String symbolicName = null;
+                Version version = null;
+                for (Enumeration<URL> resources =
+                    testClassLoader.getResources(JarFile.MANIFEST_NAME); resources
+                    .hasMoreElements();)
                 {
-                    Manifest manifest = new Manifest(inputStream);
-                    Attributes mainAttributes = manifest.getMainAttributes();
-                    symbolicName = mainAttributes.getValue(Constants.BUNDLE_SYMBOLICNAME);
-                    String bundleVersion = mainAttributes.getValue(Constants.BUNDLE_VERSION);
-                    version = bundleVersion == null ? null : new Version(bundleVersion);
-                }
-                finally
-                {
-                    inputStream.close();
-                }
-                BundleContext bundleContext = bundle.getBundleContext();
-                Bundle[] candidateBundles = bundleContext.getBundles();
-                for (Bundle candidateBundle : candidateBundles)
-                {
-                    String bundleSymbolicName = candidateBundle.getSymbolicName();
-                    Version bundleVersion = candidateBundle.getVersion();
-                    if (symbolicName.equals(bundleSymbolicName)
-                        && (version == bundleVersion || version != null
-                            && version.equals(bundleVersion)))
+                    URL resource = resources.nextElement();
+                    InputStream inputStream = resource.openStream();
+                    try
                     {
-                        Dictionary<String, String> headers = candidateBundle.getHeaders();
-                        String fragmentHost = headers.get(Constants.FRAGMENT_HOST);
-                        if (fragmentHost == null)
+                        Manifest manifest = new Manifest(inputStream);
+                        Attributes mainAttributes = manifest.getMainAttributes();
+                        String manifestVersion =
+                            mainAttributes.getValue(Constants.BUNDLE_MANIFESTVERSION);
+                        if (manifestVersion != null)
                         {
-                            BundleWiring bundleWiring = candidateBundle.adapt(BundleWiring.class);
-                            bundleWirings = Collections.singleton(bundleWiring);
-                        }
-                        else
-                        {
-                            BundleWiring candidateBundleWiring =
-                                candidateBundle.adapt(BundleWiring.class);
-                            if (candidateBundleWiring != null)
+                            symbolicName = mainAttributes.getValue(Constants.BUNDLE_SYMBOLICNAME);
+                            String bundleVersion =
+                                mainAttributes.getValue(Constants.BUNDLE_VERSION);
+                            if (bundleVersion != null)
                             {
-                                List<BundleWire> candidateBundleWires =
-                                    candidateBundleWiring.getRequiredWires(null);
-                                if (candidateBundleWires != null)
+                                version = new Version(bundleVersion);
+                            }
+                            break;
+                        }
+                    }
+                    finally
+                    {
+                        inputStream.close();
+                    }
+                }
+                if (symbolicName != null)
+                {
+                    BundleContext bundleContext = bundle.getBundleContext();
+                    Bundle[] candidateBundles = bundleContext.getBundles();
+                    for (Bundle candidateBundle : candidateBundles)
+                    {
+                        String bundleSymbolicName = candidateBundle.getSymbolicName();
+                        Version bundleVersion = candidateBundle.getVersion();
+                        if (symbolicName.equals(bundleSymbolicName)
+                            && (version == bundleVersion || version != null
+                                && version.equals(bundleVersion)))
+                        {
+                            Dictionary<String, String> headers = candidateBundle.getHeaders();
+                            String fragmentHost = headers.get(Constants.FRAGMENT_HOST);
+                            if (fragmentHost == null)
+                            {
+                                BundleWiring bundleWiring =
+                                    candidateBundle.adapt(BundleWiring.class);
+                                bundleWirings = Collections.singleton(bundleWiring);
+                            }
+                            else
+                            {
+                                BundleWiring candidateBundleWiring =
+                                    candidateBundle.adapt(BundleWiring.class);
+                                if (candidateBundleWiring != null)
                                 {
-                                    bundleWirings =
-                                        new LinkedHashSet<BundleWiring>(candidateBundleWires.size());
-                                    for (BundleWire candidateBundleWire : candidateBundleWires)
+                                    List<BundleWire> candidateBundleWires =
+                                        candidateBundleWiring.getRequiredWires(null);
+                                    if (candidateBundleWires != null)
                                     {
-                                        BundleWiring bundleWiring =
-                                            candidateBundleWire.getProviderWiring();
-                                        bundleWirings.add(bundleWiring);
+                                        bundleWirings =
+                                            new LinkedHashSet<BundleWiring>(candidateBundleWires.size());
+                                        for (BundleWire candidateBundleWire : candidateBundleWires)
+                                        {
+                                            BundleWiring bundleWiring =
+                                                candidateBundleWire.getProviderWiring();
+                                            bundleWirings.add(bundleWiring);
+                                        }
                                     }
                                 }
                             }
+                            break;
                         }
-                        break;
                     }
                 }
             }
