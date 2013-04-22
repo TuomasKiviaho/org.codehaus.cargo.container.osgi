@@ -4,10 +4,10 @@
 	<parent>
 		<groupId>org.codehaus.cargo</groupId>
 		<artifactId>cargo-core</artifactId>
-		<version>1.3.3</version>
+		<version>1.4.0</version>
 	</parent>
 	<artifactId>cargo-container-osgi</artifactId>
-	<version>1.3.4-SNAPSHOT</version>
+	<version>1.4.0-SNAPSHOT</version>
 	<name>Cargo OSGi Container</name>
 	<description>Core API implementation for OSGi Service Platform Release 4 Version 4.3</description>
 	<build>
