@@ -90,6 +90,7 @@ Usage:
 			</container>
 			<configuration>
 				<properties>
+					<cargo.servlet.port>${osgi.shell.telnet.port}</cargo.servlet.port>
 					<org.osgi.framework.storage>${project.build.directory}/felix-cache</org.osgi.framework.storage>
 					<org.osgi.framework.storage.clean>onFirstInit</org.osgi.framework.storage.clean>
 					<osgi.shell.telnet.port>${osgi.shell.telnet.port}</osgi.shell.telnet.port>
