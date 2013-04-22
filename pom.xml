@@ -125,6 +125,6 @@
 	</dependencies>
 	<properties>
 		<checkstyle.skip>true</checkstyle.skip>
-		<org.apache.maven.surefire>2.14</org.apache.maven.surefire>
+		<org.apache.maven.surefire>2.14.1</org.apache.maven.surefire>
 	</properties>
 </project>
