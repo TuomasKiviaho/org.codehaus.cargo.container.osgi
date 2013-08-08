@@ -140,7 +140,7 @@ public class Proxy
             Object result;
             try
             {
-                result = targetMethod.invoke(target, parameters);
+                result = targetMethod.invoke(this.target, parameters);
             }
             catch (IllegalArgumentException e)
             {

@@ -37,18 +37,32 @@ public class OsgiLocalConfiguration extends AbstractLocalConfiguration
 
         public void logged(LogEntry entry)
         {
-            int level = entry.getLevel();
+            Integer level = entry.getLevel();
             Logger logger = OsgiLocalConfiguration.this.getLogger();
             LogLevel logLevel = logger.getLevel();
-            if (level <= LogService.LOG_ERROR)
+            if (level >= LogService.LOG_DEBUG)
+            {
+                level = LogLevel.DEBUG.compareTo(logLevel) < 0 ? null : LogService.LOG_DEBUG;
+            }
+            else if (level >= LogService.LOG_INFO)
+            {
+                level = LogLevel.INFO.compareTo(logLevel) < 0 ? null : LogService.LOG_INFO;
+            }
+            else if (level >= LogService.LOG_WARNING)
+            {
+                level = LogLevel.WARN.compareTo(logLevel) < 0 ? null : LogService.LOG_WARNING;
+            }
+            else if (level >= LogService.LOG_ERROR)
+            {
+                level = logLevel == null ? null : LogService.LOG_ERROR;
+            }
+            else if (logLevel != null)
             {
                 String message = entry.getMessage();
                 Throwable exception = entry.getException();
                 throw new CargoException(message, exception);
             }
-            else if ((LogLevel.WARN.equals(logLevel) && level <= LogService.LOG_WARNING)
-                || (LogLevel.INFO.equals(logLevel) && level <= LogService.LOG_INFO)
-                || (LogLevel.DEBUG.equals(logLevel) && level <= LogService.LOG_DEBUG))
+            if (level != null)
             {
                 String message = entry.getMessage();
                 ServiceReference< ? > serviceReference = entry.getServiceReference();
@@ -74,6 +88,7 @@ public class OsgiLocalConfiguration extends AbstractLocalConfiguration
                 String category = symbolicName == null ? "" : symbolicName;
                 switch (level)
                 {
+                    case LogService.LOG_ERROR:
                     case LogService.LOG_WARNING:
                         logger.warn(message, category);
                         break;
