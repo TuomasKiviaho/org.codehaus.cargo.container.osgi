@@ -42,15 +42,15 @@ public class OsgiLocalConfiguration extends AbstractLocalConfiguration
             LogLevel logLevel = logger.getLevel();
             if (level >= LogService.LOG_DEBUG)
             {
-                level = LogLevel.DEBUG.compareTo(logLevel) < 0 ? null : LogService.LOG_DEBUG;
+                level = LogLevel.DEBUG.compareTo(logLevel) < 0 ? LogService.LOG_DEBUG : null;
             }
             else if (level >= LogService.LOG_INFO)
             {
-                level = LogLevel.INFO.compareTo(logLevel) < 0 ? null : LogService.LOG_INFO;
+                level = LogLevel.INFO.compareTo(logLevel) < 0 ? LogService.LOG_INFO : null;
             }
-            else if (level >= LogService.LOG_WARNING)
+            else if (level >= LogService.LOG_WARNING) 
             {
-                level = LogLevel.WARN.compareTo(logLevel) < 0 ? null : LogService.LOG_WARNING;
+                level = LogLevel.WARN.compareTo(logLevel) < 0 ? LogService.LOG_WARNING : null;
             }
             else if (level >= LogService.LOG_ERROR)
             {
