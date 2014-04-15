@@ -1,3 +1,5 @@
+[![Build Status](https://tuomaskiviaho.ci.cloudbees.com/buildStatus/icon?job=org.codehaus.cargo.container.osgi)](https://tuomaskiviaho.ci.cloudbees.com/job/org.codehaus.cargo.container.osgi/)
+
 Embedded Cargo Container for OSGi Framework Launcher
 ====================================================
 
