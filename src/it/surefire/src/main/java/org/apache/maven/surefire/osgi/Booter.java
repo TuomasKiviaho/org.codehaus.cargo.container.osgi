@@ -30,6 +30,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.Version;
+import org.osgi.framework.wiring.BundleRevision;
 import org.osgi.framework.wiring.BundleWire;
 import org.osgi.framework.wiring.BundleWiring;
 
@@ -218,7 +219,7 @@ public class Booter
                                 if (candidateBundleWiring != null)
                                 {
                                     List<BundleWire> candidateBundleWires =
-                                        candidateBundleWiring.getRequiredWires(null);
+                                        candidateBundleWiring.getRequiredWires(BundleRevision.HOST_NAMESPACE);
                                     if (candidateBundleWires != null)
                                     {
                                         bundleWirings =

@@ -312,14 +312,14 @@
 		<dependency>
 			<groupId>org.apache.felix</groupId>
 			<artifactId>org.apache.felix.framework</artifactId>
-			<version>4.0.3</version>
+			<version>4.4.1</version>
 			<type>bundle</type>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.felix</groupId>
 			<artifactId>org.apache.felix.shell</artifactId>
-			<version>1.4.2</version>
+			<version>1.4.3</version>
 			<type>bundle</type>
 			<scope>test</scope>
 		</dependency>
@@ -339,7 +339,7 @@
 		</dependency>
 	</dependencies>
 	<properties>
-		<org.aspectj>1.6.12</org.aspectj>
+		<org.aspectj>1.8.2</org.aspectj>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>

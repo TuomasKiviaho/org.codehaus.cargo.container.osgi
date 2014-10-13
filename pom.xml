@@ -4,10 +4,10 @@
 	<parent>
 		<groupId>org.codehaus.cargo</groupId>
 		<artifactId>cargo-core</artifactId>
-		<version>1.4.4</version>
+		<version>1.4.10</version>
 	</parent>
 	<artifactId>cargo-container-osgi</artifactId>
-	<version>1.4.4-SNAPSHOT</version>
+	<version>1.4.10-SNAPSHOT</version>
 	<name>Cargo OSGi Container</name>
 	<description>Core API implementation for OSGi Service Platform Release 4 Version 4.3</description>
 	<build>
@@ -115,12 +115,12 @@
 		<dependency>
 			<groupId>org.javassist</groupId>
 			<artifactId>javassist</artifactId>
-			<version>3.16.1-GA</version>
+			<version>3.18.2-GA</version>
 		</dependency>
 		<dependency>
 			<groupId>org.objenesis</groupId>
 			<artifactId>objenesis</artifactId>
-			<version>1.2</version>
+			<version>2.1</version>
 		</dependency>
 	</dependencies>
 	<properties>
