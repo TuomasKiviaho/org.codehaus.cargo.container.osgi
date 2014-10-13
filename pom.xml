@@ -10,6 +10,11 @@
 	<version>1.4.10-SNAPSHOT</version>
 	<name>Cargo OSGi Container</name>
 	<description>Core API implementation for OSGi Service Platform Release 4 Version 4.3</description>
+	<scm>
+		<connection>scm:git:git@github.com:TuomasKiviaho/org.codehaus.cargo.container.osgi.git</connection>
+		<url>scm:git:git@github.com:TuomasKiviaho/org.codehaus.cargo.container.osgi.git</url>
+		<developerConnection>scm:git:git@github.com:TuomasKiviaho/org.codehaus.cargo.container.osgi.git</developerConnection>
+	</scm>
 	<build>
 		<plugins>
 			<plugin>
